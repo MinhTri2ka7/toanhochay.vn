@@ -9,7 +9,7 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      // Only proxy our backend API calls — NOT /api/assets (those are local static files)
+      // Dev proxy - all /api calls go to local Express server
       '/api/admin': { target: 'http://localhost:3001', changeOrigin: true },
       '/api/cart': { target: 'http://localhost:3001', changeOrigin: true },
       '/api/orders': { target: 'http://localhost:3001', changeOrigin: true },
@@ -30,5 +30,8 @@ export default defineConfig({
       '/api/health': { target: 'http://localhost:3001', changeOrigin: true },
       '/uploads': { target: 'http://localhost:3001', changeOrigin: true },
     },
+  },
+  build: {
+    // Vite 8 handles chunk splitting automatically
   },
 })

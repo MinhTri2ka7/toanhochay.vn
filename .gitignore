@@ -27,3 +27,40 @@ dist-ssr
 .env
 .env.local
 .gemini/settings.json
+
+# SQLite (not needed with Supabase)
+server/database.sqlite
+server/database.sqlite-shm
+server/database.sqlite-wal
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Agent configs (not needed in production)
+.agents
+.claude
+.codebuddy
+.commandcode
+.continue
+.crush
+.factory
+.gemini
+.goose
+.junie
+.kilocode
+.kiro
+.kode
+.mcpjam
+.mux
+.neovate
+.openhands
+.pi
+.pochi
+.qoder
+.qwen
+.roo
+.trae
+.windsurf
+.zencoder
+
+# Migration scripts (dev only)
+run_migration_*.js
