@@ -1,40 +1,63 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import Layout from './components/Layout'
-import HomePage from './pages/HomePage'
-import CoursesPage from './pages/CoursesPage'
-import BooksPage from './pages/BooksPage'
-import ExamsPage from './pages/ExamsPage'
-import ExamTakingPage from './pages/ExamTakingPage'
-import DocumentsPage from './pages/DocumentsPage'
-import AboutPage from './pages/AboutPage'
-import CartPage from './pages/CartPage'
-import CheckoutPage from './pages/CheckoutPage'
-import ActivatePage from './pages/ActivatePage'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import AdminLayout from './pages/admin/AdminLayout'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminCourses from './pages/admin/AdminCourses'
-import AdminBooks from './pages/admin/AdminBooks'
-import AdminOrders from './pages/admin/AdminOrders'
-import AdminUsers from './pages/admin/AdminUsers'
-import AdminExams from './pages/admin/AdminExams'
-import AdminFeedbacks from './pages/admin/AdminFeedbacks'
-import AdminTransactions from './pages/admin/AdminTransactions'
-import AdminExamResults from './pages/admin/AdminExamResults'
-import AdminDocuments from './pages/admin/AdminDocuments'
-import AdminSettings from './pages/admin/AdminSettings'
-import AdminSections from './pages/admin/AdminSections'
-import AdminAbout from './pages/admin/AdminAbout'
 import './index.css'
+
+// ============================================
+// LAZY LOADED PAGES — only download when visited
+// ============================================
+
+// Public pages
+const HomePage = lazy(() => import('./pages/HomePage'))
+const CoursesPage = lazy(() => import('./pages/CoursesPage'))
+const BooksPage = lazy(() => import('./pages/BooksPage'))
+const ExamsPage = lazy(() => import('./pages/ExamsPage'))
+const ExamTakingPage = lazy(() => import('./pages/ExamTakingPage'))
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+const CartPage = lazy(() => import('./pages/CartPage'))
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
+const ActivatePage = lazy(() => import('./pages/ActivatePage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+
+// Admin pages — heavy, only loaded for admin users
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminCourses = lazy(() => import('./pages/admin/AdminCourses'))
+const AdminBooks = lazy(() => import('./pages/admin/AdminBooks'))
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'))
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminExams = lazy(() => import('./pages/admin/AdminExams'))
+const AdminFeedbacks = lazy(() => import('./pages/admin/AdminFeedbacks'))
+const AdminTransactions = lazy(() => import('./pages/admin/AdminTransactions'))
+const AdminExamResults = lazy(() => import('./pages/admin/AdminExamResults'))
+const AdminDocuments = lazy(() => import('./pages/admin/AdminDocuments'))
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+const AdminSections = lazy(() => import('./pages/admin/AdminSections'))
+const AdminAbout = lazy(() => import('./pages/admin/AdminAbout'))
+
+// ============================================
+// LOADING SPINNER
+// ============================================
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-4 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
+        <span className="text-sm text-gray-400 font-medium">Đang tải...</span>
+      </div>
+    </div>
+  )
+}
 
 // Protected route wrapper
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) return <PageLoader />
   if (!user) return <Navigate to={`/login?redirect=${encodeURIComponent(window.location.pathname)}`} replace />
   return children
 }
@@ -42,7 +65,7 @@ function ProtectedRoute({ children }) {
 // Admin route wrapper
 function AdminRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" /></div>
+  if (loading) return <PageLoader />
   if (!user || (user.role !== 'admin' && user.role !== 'staff')) return <Navigate to="/login" replace />
   return children
 }
@@ -53,6 +76,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <SettingsProvider>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public routes with main layout */}
             <Route element={<Layout />}>
@@ -94,6 +118,7 @@ function App() {
             {/* Catch-all: redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
           </SettingsProvider>
         </CartProvider>
       </AuthProvider>
