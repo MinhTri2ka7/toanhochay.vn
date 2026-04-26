@@ -133,7 +133,7 @@ export default function CheckoutPage() {
                   <div className="space-y-2 text-sm">
                     <p><span className="text-gray-500">Ngân hàng:</span> <strong>{settings.bank_name || 'MB Bank'}</strong></p>
                     <p><span className="text-gray-500">Số TK:</span> <strong>{settings.bank_account || settings.phone || '0984511618'}</strong></p>
-                    <p><span className="text-gray-500">Chủ TK:</span> <strong>{settings.bank_holder || 'Thầy Tuấn'}</strong></p>
+                    <p><span className="text-gray-500">Chủ TK:</span> <strong>{settings.bank_owner || 'Thầy Tuấn'}</strong></p>
                     <p><span className="text-gray-500">Số tiền:</span> <strong className="text-red-600">{formatPrice(order.totalAmount)}đ</strong></p>
                     <p><span className="text-gray-500">Nội dung CK:</span> <strong className="text-brand-700">{order.paymentCode}</strong></p>
                   </div>
@@ -143,7 +143,7 @@ export default function CheckoutPage() {
                 <div className="mb-6">
                   <p className="text-sm font-semibold text-gray-700 mb-3">Quét mã QR để thanh toán</p>
                   <img
-                    src={`https://qr.sepay.vn/img?acc=${settings.bank_account || settings.phone || '0984511618'}&bank=${settings.bank_name || 'MBBank'}&amount=${order.totalAmount}&des=${order.paymentCode}`}
+                    src={`https://qr.sepay.vn/img?acc=${settings.bank_account || settings.phone || '0984511618'}&bank=${(settings.bank_name || 'MBBank').replace(/\s/g, '')}&amount=${order.totalAmount}&des=${order.paymentCode}`}
                     alt="QR thanh toán"
                     className="w-48 h-48 mx-auto rounded-xl border-2 border-gray-200"
                   />
