@@ -1,10 +1,45 @@
 /**
  * API helper for frontend → backend communication
  * All API calls go through this module for consistency
+ * Includes in-memory cache to avoid redundant fetches on tab switching
  */
 
 const API_BASE = '/api'
 
+// ============================================
+// IN-MEMORY CACHE — prevents re-fetching on navigation
+// ============================================
+const cache = new Map()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+function getCached(key) {
+  const entry = cache.get(key)
+  if (!entry) return null
+  if (Date.now() - entry.ts > CACHE_TTL) {
+    cache.delete(key)
+    return null
+  }
+  return entry.data
+}
+
+function setCache(key, data) {
+  cache.set(key, { data, ts: Date.now() })
+}
+
+// Invalidate cache for a specific prefix (e.g. after admin edits)
+export function invalidateCache(prefix = '') {
+  if (!prefix) {
+    cache.clear()
+    return
+  }
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) cache.delete(key)
+  }
+}
+
+// ============================================
+// CORE FETCH
+// ============================================
 async function apiFetch(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`
   const res = await fetch(url, {
@@ -22,48 +57,57 @@ async function apiFetch(endpoint, options = {}) {
   return res.json()
 }
 
+// Cached GET — returns cache instantly, skips network if fresh
+async function cachedFetch(endpoint) {
+  const cached = getCached(endpoint)
+  if (cached) return cached
+  const data = await apiFetch(endpoint)
+  setCache(endpoint, data)
+  return data
+}
+
 // ============================================
-// PUBLIC APIs
+// PUBLIC APIs (cached)
 // ============================================
 
 export async function fetchCourses() {
-  return apiFetch('/courses')
+  return cachedFetch('/courses')
 }
 
 export async function fetchCombos() {
-  return apiFetch('/combos')
+  return cachedFetch('/combos')
 }
 
 export async function fetchBooks() {
-  return apiFetch('/books')
+  return cachedFetch('/books')
 }
 
 export async function fetchExams() {
-  return apiFetch('/exams')
+  return cachedFetch('/exams')
 }
 
 export async function fetchExam(id) {
-  return apiFetch(`/exams/${id}`)
+  return cachedFetch(`/exams/${id}`)
 }
 
 export async function fetchDocuments() {
-  return apiFetch('/documents')
+  return cachedFetch('/documents')
 }
 
 export async function fetchFeedbacks(type = 'feedback') {
-  return apiFetch(`/feedbacks?type=${type}`)
+  return cachedFetch(`/feedbacks?type=${type}`)
 }
 
 export async function fetchSettings() {
-  return apiFetch('/settings')
+  return cachedFetch('/settings')
 }
 
 export async function fetchHomepageSections() {
-  return apiFetch('/homepage-sections')
+  return cachedFetch('/homepage-sections')
 }
 
 // ============================================
-// EXAM APIs
+// EXAM APIs (not cached — mutations)
 // ============================================
 
 export async function verifyExamPasscode(id, passcode) {
