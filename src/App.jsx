@@ -41,6 +41,28 @@ const AdminSections = lazy(() => import('./pages/admin/AdminSections'))
 const AdminAbout = lazy(() => import('./pages/admin/AdminAbout'))
 
 // ============================================
+// PREFETCH — preload public pages after initial render
+// so tab switching is instant (no spinner)
+// ============================================
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      import('./pages/CoursesPage')
+      import('./pages/BooksPage')
+      import('./pages/ExamsPage')
+      import('./pages/DocumentsPage')
+      import('./pages/AboutPage')
+      import('./pages/CartPage')
+      import('./pages/LoginPage')
+      import('./pages/RegisterPage')
+      import('./pages/CheckoutPage')
+      import('./pages/ActivatePage')
+      import('./pages/ExamTakingPage')
+    }, 1500)
+  }, { once: true })
+}
+
+// ============================================
 // LOADING SPINNER
 // ============================================
 function PageLoader() {
