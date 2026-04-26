@@ -38,7 +38,7 @@ export default function ExamsPage() {
         <div className="mb-6">
           <div className="rounded-2xl lg:rounded-3xl overflow-hidden shadow-card"
                style={{
-                 background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #dc2626 100%)',
+                 background: '#FFF8E1',
                  padding: '2.5rem 1.5rem',
                  display: 'flex',
                  alignItems: 'center',
@@ -49,11 +49,13 @@ export default function ExamsPage() {
               fontFamily: 'var(--font-heading)',
               fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
               fontWeight: 900,
-              color: '#fff',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
-              textShadow: '0 2px 12px rgba(0,0,0,0.18)',
               margin: 0,
+              background: 'linear-gradient(180deg, #F5C518 0%, #E8751A 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}>Thi Thử</h2>
           </div>
         </div>
