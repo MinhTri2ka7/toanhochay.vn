@@ -37,7 +37,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <img src={settings.logo || '/logo_footer.webp'} alt={siteName}
+              <img src={settings.logo || '/favicon.svg'} alt={siteName}
                    className="w-11 h-11 rounded-xl shadow-lg" />
               <h2 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
                 {siteName}

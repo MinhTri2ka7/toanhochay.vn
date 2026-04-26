@@ -76,7 +76,7 @@ export default function Layout() {
             </button>
 
             <Link to="/" className="flex items-center gap-2.5">
-              <img src={settings.logo || '/favicon.webp'} alt={siteName}
+              <img src={settings.logo || '/favicon.svg'} alt={siteName}
                    className="w-9 h-9 rounded-xl shadow-sm" />
               <span className="font-bold text-brand-800 text-sm lg:text-base"
                 style={{ fontFamily: 'var(--font-heading)' }}>
