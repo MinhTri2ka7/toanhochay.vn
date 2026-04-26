@@ -63,12 +63,51 @@ export default function AdminSettings() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tên trang web</label>
               <input type="text" value={settings.site_name || ''} onChange={e => update('site_name', e.target.value)}
+                     placeholder="Toán Học Hay"
                      className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả trang</label>
               <textarea value={settings.site_description || ''} onChange={e => update('site_description', e.target.value)} rows={3}
+                        placeholder="Hệ thống khóa học từ lớp 10 đến 12, thiết kế khoa học..."
                         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none resize-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Hero Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
+            ✨ Trang chủ (Hero)
+          </h2>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề chính (dòng 1)</label>
+              <input type="text" value={settings.hero_title || ''} onChange={e => update('hero_title', e.target.value)}
+                     placeholder="Chinh phục Toán học"
+                     className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề phụ (dòng 2, màu vàng)</label>
+              <input type="text" value={settings.hero_subtitle || ''} onChange={e => update('hero_subtitle', e.target.value)}
+                     placeholder="cùng Thầy Tuấn"
+                     className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+            </div>
+            <div className="border-t border-gray-100 pt-3 mt-3">
+              <p className="text-xs font-semibold text-gray-500 mb-2">3 ô thống kê nhỏ</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[1,2,3].map(n => (
+                  <div key={n} className="contents">
+                    <input type="text" value={settings[`stat_${n}_value`] || ''} onChange={e => update(`stat_${n}_value`, e.target.value)}
+                           placeholder={n===1?'170K+':n===2?'#1':'8+'}
+                           className="h-9 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+                    <input type="text" value={settings[`stat_${n}_label`] || ''} onChange={e => update(`stat_${n}_label`, e.target.value)}
+                           placeholder={n===1?'Học sinh':n===2?'Livestream':'Năm KN'}
+                           className="h-9 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">Mỗi hàng: Giá trị | Nhãn</p>
             </div>
           </div>
         </div>
@@ -170,7 +209,7 @@ export default function AdminSettings() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Chủ tài khoản</label>
-              <input type="text" value={settings.bank_owner || ''} onChange={e => update('bank_owner', e.target.value)}
+              <input type="text" value={settings.bank_holder || ''} onChange={e => update('bank_holder', e.target.value)}
                      className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
             </div>
           </div>

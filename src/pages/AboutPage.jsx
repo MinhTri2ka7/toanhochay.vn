@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Award, Users, Tv, BookOpen, GraduationCap, Star, Target, Heart } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
+import { useSettings } from '../contexts/SettingsContext'
 
 /* Animated counter hook */
 function useCountUp(end, duration = 2000, startOnView = true) {
@@ -63,46 +64,43 @@ function AnimatedStat({ icon: Icon, label, value, suffix = '', delay = 0 }) {
   )
 }
 
-const timeline = [
-  {
-    year: '2016',
-    title: 'Bắt đầu hành trình',
-    desc: 'Khởi đầu con đường giảng dạy Toán với niềm đam mê cháy bỏng.',
-    icon: Star,
-  },
-  {
-    year: '2018',
-    title: 'Livestream đầu tiên',
-    desc: 'Tiên phong trong việc dạy Toán qua livestream, thu hút hàng ngàn học sinh.',
-    icon: Tv,
-  },
-  {
-    year: '2020',
-    title: 'Nền tảng trực tuyến',
-    desc: 'Ra mắt hệ thống khóa học trực tuyến, mở rộng phạm vi giảng dạy toàn quốc.',
-    icon: Target,
-  },
-  {
-    year: '2022',
-    title: '100K+ học sinh',
-    desc: 'Cộng đồng học sinh vượt mốc 100.000 follow, khẳng định chất lượng giảng dạy.',
-    icon: Users,
-  },
-  {
-    year: '2024',
-    title: 'Top 1 Livestream',
-    desc: 'Trở thành Top 1 giáo viên dạy livestream lượng xem trực tiếp tại Việt Nam.',
-    icon: Award,
-  },
-  {
-    year: '2025',
-    title: '170K+ Follow',
-    desc: 'Gần 170.000 follow Facebook, tiếp tục sứ mệnh truyền cảm hứng học Toán.',
-    icon: Heart,
-  },
+const defaultTimeline = [
+  { year: '2016', title: 'Bắt đầu hành trình', desc: 'Khởi đầu con đường giảng dạy Toán với niềm đam mê cháy bỏng.' },
+  { year: '2018', title: 'Mở rộng', desc: 'Phát triển chương trình và tiếp cận nhiều học sinh hơn.' },
+  { year: '2020', title: 'Nền tảng trực tuyến', desc: 'Ra mắt hệ thống khóa học trực tuyến, mở rộng phạm vi giảng dạy.' },
+  { year: '2022', title: '100K+ học sinh', desc: 'Cộng đồng học sinh vượt mốc lớn, khẳng định chất lượng giảng dạy.' },
+  { year: '2024', title: 'Thành tích quốc tế', desc: 'Hàng trăm học sinh đạt giải Perfect Scorer, Gold Award.' },
 ]
 
+const timelineIcons = [Star, Tv, Target, Users, Award, Heart]
+
 export default function AboutPage() {
+  const settings = useSettings()
+
+  // Parse timeline from settings, fallback to default
+  let timeline = defaultTimeline
+  try {
+    const parsed = JSON.parse(settings.about_timeline || '[]')
+    if (parsed.length > 0) timeline = parsed
+  } catch {}
+
+  // Read content from settings with defaults
+  const teacherName = settings.about_teacher_name || 'Thầy Tuấn'
+  const teacherTitle = settings.about_teacher_title || 'Chuyên luyện thi Toán lớp 1 - 6, TIMO, SASMO'
+  const teacherBio = settings.about_teacher_bio || 'Nhiều năm kinh nghiệm luyện thi Toán quốc tế (TIMO, SASMO, IKMC, FMO). Đã giúp hàng trăm học sinh đạt giải Perfect Scorer, Gold Award trong các kỳ thi Toán quốc tế. Chuyên dạy Toán tư duy cho học sinh lớp 1 đến lớp 6.'
+  const badge = settings.about_badge || 'Thủ khoa ĐH'
+  const avatarUrl = settings.about_avatar || '/avatar.png'
+
+  const stats = [
+    { icon: Award,    value: settings.about_stat_1_value || '8',    suffix: settings.about_stat_1_value?.includes('K') ? '' : '+', label: settings.about_stat_1_label || 'Năm kinh nghiệm' },
+    { icon: Users,    value: settings.about_stat_2_value || '170',  suffix: settings.about_stat_2_value?.includes('K') ? '' : 'K+', label: settings.about_stat_2_label || 'Học sinh theo học' },
+    { icon: Tv,       value: settings.about_stat_3_value || '#1',   suffix: '',                                                      label: settings.about_stat_3_label || 'Top livestream' },
+    { icon: BookOpen, value: settings.about_stat_4_value || '7',    suffix: '+',                                                     label: settings.about_stat_4_label || 'Khóa học' },
+  ]
+
+  const mission1 = settings.about_mission_1 || `Với niềm đam mê giảng dạy và mong muốn truyền cảm hứng học tập cho thế hệ trẻ, ${teacherName} đã xây dựng hệ thống khóa học trực tuyến chất lượng cao, giúp hàng ngàn học sinh trên cả nước tiếp cận với phương pháp học Toán hiệu quả.`
+  const mission2 = settings.about_mission_2 || 'Hệ thống khóa học được thiết kế khoa học, từ cơ bản đến nâng cao, phù hợp với mọi đối tượng học sinh. Mỗi bài giảng đều được đầu tư kỹ lưỡng về nội dung và hình thức, đảm bảo học sinh có thể hiểu sâu và vận dụng linh hoạt.'
+
   return (
     <div className="mb-12">
       {/* ========== HERO SECTION ========== */}
@@ -118,17 +116,19 @@ export default function AboutPage() {
             <ScrollReveal direction="left">
               <div className="relative">
                 <img
-                  src="/avatar.png"
-                  alt="Thầy Hồ Thức Thuận"
+                  src={avatarUrl}
+                  alt={teacherName}
                   className="w-44 h-44 lg:w-56 lg:h-56 rounded-3xl object-cover shadow-lg
                              ring-4 ring-brand-400/30"
                 />
                 {/* Badge */}
-                <div className="absolute -bottom-3 -right-3 bg-brand-500
-                                text-brand-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
-                  <GraduationCap size={14} className="inline mr-1" />
-                  Thủ khoa ĐH
-                </div>
+                {badge && (
+                  <div className="absolute -bottom-3 -right-3 bg-brand-500
+                                  text-brand-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                    <GraduationCap size={14} className="inline mr-1" />
+                    {badge}
+                  </div>
+                )}
               </div>
             </ScrollReveal>
 
@@ -137,15 +137,13 @@ export default function AboutPage() {
               <div className="flex-1 text-center lg:text-left">
                 <h1 className="text-3xl lg:text-5xl font-bold text-white mb-2"
                     style={{ fontFamily: 'var(--font-heading)' }}>
-                  Thầy Hồ Thức Thuận
+                  {teacherName}
                 </h1>
                 <p className="text-brand-300 font-semibold text-lg mb-5">
-                  Chuyên luyện thi Toán 10, 11, 12
+                  {teacherTitle}
                 </p>
                 <p className="text-brand-100/80 leading-relaxed max-w-xl">
-                  8 năm kinh nghiệm luyện thi đại học chất lượng cao. Gần 170.000 follow facebook
-                  học sinh theo học. Điểm thi Đại Học Thủ Khoa với 28 điểm (Toán 9.5; Lý 9,5; Hóa 9).
-                  Đã giúp đỡ hàng ngàn học sinh đỗ đại học mơ ước.
+                  {teacherBio}
                 </p>
               </div>
             </ScrollReveal>
@@ -156,10 +154,9 @@ export default function AboutPage() {
       {/* ========== STATS ========== */}
       <div className="mx-4 md:mx-16 xl:mx-[10%] -mt-6 relative z-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          <AnimatedStat icon={Award} label="Năm kinh nghiệm" value="8" suffix="+" delay={0} />
-          <AnimatedStat icon={Users} label="Học sinh theo học" value="170" suffix="K+" delay={100} />
-          <AnimatedStat icon={Tv} label="Top livestream" value="#1" delay={200} />
-          <AnimatedStat icon={BookOpen} label="Khóa học" value="7" suffix="+" delay={300} />
+          {stats.map((s, i) => (
+            <AnimatedStat key={i} icon={s.icon} label={s.label} value={s.value} suffix={s.suffix} delay={i * 100} />
+          ))}
         </div>
       </div>
 
@@ -176,16 +173,16 @@ export default function AboutPage() {
         </ScrollReveal>
 
         <div className="relative max-w-3xl mx-auto">
-          {/* Timeline line — solid color */}
+          {/* Timeline line */}
           <div className="absolute left-6 lg:left-1/2 lg:-translate-x-px top-0 bottom-0 w-0.5
                           bg-brand-400" />
 
           {timeline.map((item, i) => {
             const isLeft = i % 2 === 0
-            const TimeIcon = item.icon
+            const TimeIcon = timelineIcons[i % timelineIcons.length]
 
             return (
-              <ScrollReveal key={item.year} delay={i * 120} direction={isLeft ? 'left' : 'right'}>
+              <ScrollReveal key={i} delay={i * 120} direction={isLeft ? 'left' : 'right'}>
                 <div className={`relative flex items-start gap-6 mb-8
                                  lg:${isLeft ? 'flex-row' : 'flex-row-reverse'}
                                  lg:gap-12`}>
@@ -232,16 +229,8 @@ export default function AboutPage() {
                 Sứ mệnh
               </h2>
               <div className="space-y-4 text-gray-600 leading-relaxed">
-                <p>
-                  Với niềm đam mê giảng dạy và mong muốn truyền cảm hứng học tập cho thế hệ trẻ,
-                  Thầy Hồ Thức Thuận đã xây dựng hệ thống khóa học trực tuyến chất lượng cao,
-                  giúp hàng ngàn học sinh trên cả nước tiếp cận với phương pháp học Toán hiệu quả.
-                </p>
-                <p>
-                  Hệ thống khóa học được thiết kế khoa học, từ cơ bản đến nâng cao,
-                  phù hợp với mọi đối tượng học sinh. Mỗi bài giảng đều được đầu tư kỹ lưỡng
-                  về nội dung và hình thức, đảm bảo học sinh có thể hiểu sâu và vận dụng linh hoạt.
-                </p>
+                <p>{mission1}</p>
+                <p>{mission2}</p>
               </div>
             </div>
           </div>

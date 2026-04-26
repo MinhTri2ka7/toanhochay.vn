@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, ShoppingCart, Users, FileText, LogOut, ArrowLeft, Package, Star, CreditCard, History, FolderOpen, Settings, LayoutGrid } from 'lucide-react'
+import { LayoutDashboard, BookOpen, ShoppingCart, Users, FileText, LogOut, ArrowLeft, Package, Star, CreditCard, History, FolderOpen, Settings, LayoutGrid, Info } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
 const adminLinks = [
@@ -14,6 +14,7 @@ const adminLinks = [
   { path: '/admin/feedbacks', icon: Star, label: 'Vinh danh & Cảm nhận' },
   { path: '/admin/transactions', icon: CreditCard, label: 'Lịch sử GD' },
   { path: '/admin/exam-results', icon: History, label: 'Lịch sử thi' },
+  { path: '/admin/about', icon: Info, label: 'Trang giới thiệu' },
   { path: '/admin/settings', icon: Settings, label: 'Cài đặt trang' },
 ]
 

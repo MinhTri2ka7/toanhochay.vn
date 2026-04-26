@@ -62,5 +62,7 @@ server/uploads/*
 .windsurf
 .zencoder
 
-# Migration scripts (dev only)
+# Migration and seed scripts (dev only)
 run_migration_*.js
+seed-supabase.cjs
+rebrand-db.cjs

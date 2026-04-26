@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
+import { SettingsProvider } from './contexts/SettingsContext'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import CoursesPage from './pages/CoursesPage'
@@ -27,6 +28,7 @@ import AdminExamResults from './pages/admin/AdminExamResults'
 import AdminDocuments from './pages/admin/AdminDocuments'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminSections from './pages/admin/AdminSections'
+import AdminAbout from './pages/admin/AdminAbout'
 import './index.css'
 
 // Protected route wrapper
@@ -50,6 +52,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
+          <SettingsProvider>
           <Routes>
             {/* Public routes with main layout */}
             <Route element={<Layout />}>
@@ -67,7 +70,7 @@ function App() {
               {/* Legacy auth routes */}
               <Route path="/auth/login" element={<Navigate to="/login" replace />} />
               <Route path="/auth/signup" element={<Navigate to="/register" replace />} />
-              {/* Protected routes */}
+              {/* Checkout has its own auth gate UI with cart preview */}
               <Route path="/checkout" element={<CheckoutPage />} />
             </Route>
 
@@ -84,9 +87,14 @@ function App() {
               <Route path="transactions" element={<AdminTransactions />} />
               <Route path="exam-results" element={<AdminExamResults />} />
               <Route path="documents" element={<AdminDocuments />} />
+              <Route path="about" element={<AdminAbout />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
+
+            {/* Catch-all: redirect unknown routes to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </SettingsProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

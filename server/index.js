@@ -154,6 +154,5 @@ app.use((err, req, res, next) => {
 // ============================================
 app.listen(PORT, () => {
   console.log(`\n🚀 API Server running at http://localhost:${PORT}`)
-  console.log(`📦 Database: Supabase PostgreSQL`)
-  console.log(`👤 Admin: admin@thaythuan.vn / admin123\n`)
+  console.log(`📦 Database: Supabase PostgreSQL\n`)
 })

@@ -2,7 +2,11 @@ import jwt from 'jsonwebtoken'
 import rateLimit from 'express-rate-limit'
 import db from '../db.js'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'thaythuan-secret-key-change-in-production-2026'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  console.error('⚠️ JWT_SECRET not set — using fallback for dev only')
+}
+const SECRET = JWT_SECRET || 'dev-only-fallback-' + Date.now()
 const JWT_EXPIRES = '7d'
 
 // ============================================
@@ -17,7 +21,7 @@ export async function authenticateToken(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token, SECRET)
     const user = await db.selectOne('users', { id: decoded.userId }, 'id, name, email, phone, role, status')
 
     if (!user) {
@@ -41,7 +45,7 @@ export async function optionalAuth(req, res, next) {
   if (!token) return next()
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token, SECRET)
     const user = await db.selectOne('users', { id: decoded.userId }, 'id, name, email, phone, role, status')
     if (user && user.status === 'active') req.user = user
   } catch (err) {
@@ -60,7 +64,7 @@ export function requireAdmin(req, res, next) {
 
 // Generate JWT token
 export function generateToken(userId) {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES })
+  return jwt.sign({ userId }, SECRET, { expiresIn: JWT_EXPIRES })
 }
 
 // Set cookie
@@ -102,7 +106,10 @@ export const apiLimiter = rateLimit({
 // ============================================
 export function sanitizeInput(str) {
   if (typeof str !== 'string') return str
-  return str.trim().replace(/[<>]/g, '')
+  return str.trim()
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
 }
 
 // Security log

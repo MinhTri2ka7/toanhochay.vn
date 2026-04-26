@@ -7,12 +7,12 @@
 -- COURSES
 -- ============================================
 INSERT INTO courses (id, slug, name, price, old_price, image, type) VALUES
-  ('cm0m24un00008yt3rb67hh3uj', 'live-s-2k7', 'LIVE S - Khởi động - Toán 2K7 - HTT', 1000000, 2000000, '/api/assets/course/cm0m24un00008yt3rb67hh3uj', 'live'),
-  ('cm0m26sih000ayt3rrw4yke29', 'live-c-2k7', 'LIVE C - Chuyên đề - Toán 2K7 - HTT', 1000000, 2000000, '/api/assets/course/cm0m26sih000ayt3rrw4yke29', 'live'),
-  ('cm0m2b4pv000cyt3rro70uqii', 'live-t-2k7', 'LIVE T - Luyện đề - Toán 2K7 - HTT', 1000000, 2000000, '/api/assets/course/cm0m2b4pv000cyt3rro70uqii', 'live'),
-  ('cm0m2cabc000eyt3rrkgcv8zz', 'live-g-2k7', 'LIVE G - Tổng ôn - Toán học 2K7 - HTT', 1000000, 2000000, '/api/assets/course/cm0m2cabc000eyt3rrkgcv8zz', 'live'),
-  ('cm0m2dyg4000gyt3r8vs2r8fx', 'live-vip-hk1-2k8', 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 1 2K8 THẦY HỒ THỨC THUẬN', 1200000, 2400000, '/api/assets/course/cm0m2dyg4000gyt3r8vs2r8fx', 'vip'),
-  ('cm0m2fcma000iyt3r5cnoxxn3', 'live-vip-hk2-2k8', 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 2 2K8 THẦY HỒ THỨC THUẬN', 1200000, 2400000, '/api/assets/course/cm0m2fcma000iyt3r5cnoxxn3', 'vip'),
+  ('cm0m24un00008yt3rb67hh3uj', 'live-s-2k7', 'LIVE S - Khởi động - Toán 2K7 - Thầy Tuấn', 1000000, 2000000, '/api/assets/course/cm0m24un00008yt3rb67hh3uj', 'live'),
+  ('cm0m26sih000ayt3rrw4yke29', 'live-c-2k7', 'LIVE C - Chuyên đề - Toán 2K7 - Thầy Tuấn', 1000000, 2000000, '/api/assets/course/cm0m26sih000ayt3rrw4yke29', 'live'),
+  ('cm0m2b4pv000cyt3rro70uqii', 'live-t-2k7', 'LIVE T - Luyện đề - Toán 2K7 - Thầy Tuấn', 1000000, 2000000, '/api/assets/course/cm0m2b4pv000cyt3rro70uqii', 'live'),
+  ('cm0m2cabc000eyt3rrkgcv8zz', 'live-g-2k7', 'LIVE G - Tổng ôn - Toán học 2K7 - Thầy Tuấn', 1000000, 2000000, '/api/assets/course/cm0m2cabc000eyt3rrkgcv8zz', 'live'),
+  ('cm0m2dyg4000gyt3r8vs2r8fx', 'live-vip-hk1-2k8', 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 1 2K8 THẦY TUẤN', 1200000, 2400000, '/api/assets/course/cm0m2dyg4000gyt3r8vs2r8fx', 'vip'),
+  ('cm0m2fcma000iyt3r5cnoxxn3', 'live-vip-hk2-2k8', 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 2 2K8 THẦY TUẤN', 1200000, 2400000, '/api/assets/course/cm0m2fcma000iyt3r5cnoxxn3', 'vip'),
   ('cmjnot0110005n4ej9oid615i', '2k8livec', 'KHÓA LIVE C CHUYÊN ĐỀ 2K8', 1990000, 3600000, '/api/assets/course/cmjnot0110005n4ej9oid615i', 'live')
 ON CONFLICT (id) DO NOTHING;
 
@@ -20,8 +20,8 @@ ON CONFLICT (id) DO NOTHING;
 -- COMBOS
 -- ============================================
 INSERT INTO combos (id, name, price, old_price, image) VALUES
-  ('cm0m2hhi6000jyt3ra143ofm9', 'COMBO LIVE VIP TOÁN 11 - Khoá 2K8 THẦY HỒ THỨC THUẬN', 1800000, 3600000, '/api/assets/combo/cm0m2hhi6000jyt3ra143ofm9'),
-  ('cm0m2ix9e000kyt3rec9bmop3', 'COMBO CTG TOÁN 2K7 - HTT', 2000000, 4000000, '/api/assets/combo/cm0m2ix9e000kyt3rec9bmop3')
+  ('cm0m2hhi6000jyt3ra143ofm9', 'COMBO LIVE VIP TOÁN 11 - Khoá 2K8 THẦY TUẤN', 1800000, 3600000, '/api/assets/combo/cm0m2hhi6000jyt3ra143ofm9'),
+  ('cm0m2ix9e000kyt3rec9bmop3', 'COMBO CTG TOÁN 2K7 - Thầy Tuấn', 2000000, 4000000, '/api/assets/combo/cm0m2ix9e000kyt3rec9bmop3')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
@@ -81,27 +81,27 @@ INSERT INTO questions (test_id, question_text, option_a, option_b, option_c, opt
 -- Note: Password is bcrypt hash of 'admin123'
 -- ============================================
 INSERT INTO users (name, email, password, role) VALUES
-  ('Admin', 'admin@thaythuan.vn', '$2a$10$rQXBOiHzRfFGz2eAOxhJaOrSpkCp1P.Xr0tFYgCDBhKzFIYKBjiHy', 'admin')
+  ('Admin', 'admin@toanhochay.vn', '$2a$10$rQXBOiHzRfFGz2eAOxhJaOrSpkCp1P.Xr0tFYgCDBhKzFIYKBjiHy', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- ============================================
 -- SITE SETTINGS
 -- ============================================
 INSERT INTO site_settings (key, value) VALUES
-  ('site_name', 'Toán Thầy Thuận'),
-  ('site_description', '8 năm kinh nghiệm luyện thi đại học chất lượng cao. Đồng hành cùng hàng ngàn học sinh trên cả nước.'),
+  ('site_name', 'Toán Thầy Tuấn'),
+  ('site_description', 'Hệ thống khóa học Toán tư duy lớp 1-6, luyện thi TIMO, SASMO, IKMC cho học sinh tiểu học.'),
   ('logo', '/logo_footer.webp'),
   ('avatar', '/avatar.png'),
   ('address', '70 Nguyễn Đức Cảnh - Tương Mai, Hoàng Mai, Hà Nội'),
-  ('email', 'hothucthuan@gmail.com'),
-  ('phone', '0869998668'),
-  ('zalo', 'https://zalo.me/0869998668'),
-  ('facebook', 'https://www.facebook.com/Thaygiaothuan.99'),
-  ('youtube', 'https://www.youtube.com/c/HồThứcThuậnOfficial'),
-  ('tiktok', 'https://www.tiktok.com/@thay_hothucthuan'),
+  ('email', 'thaytuan.toanhochay@gmail.com'),
+  ('phone', '0984511618'),
+  ('zalo', 'https://zalo.me/0984511618'),
+  ('facebook', 'https://www.facebook.com/toanhochay'),
+  ('youtube', 'https://www.youtube.com/@toanhochay'),
+  ('tiktok', 'https://www.tiktok.com/@toanhochay'),
   ('bank_name', 'MB Bank'),
-  ('bank_account', '0869998668'),
-  ('bank_owner', 'HO THUC THUAN')
+  ('bank_account', '0984511618'),
+  ('bank_owner', 'THAY TUAN')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================

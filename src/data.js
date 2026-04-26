@@ -3,7 +3,7 @@ export const courses = [
   {
     id: 'cm0m24un00008yt3rb67hh3uj',
     slug: 'live-s-2k7',
-    name: 'LIVE S - Khởi động - Toán 2K7 - HTT',
+    name: 'LIVE S - Khởi động - Toán 2K7 - Thầy Tuấn',
     price: 1000000,
     oldPrice: 2000000,
     image: '/api/assets/course/cm0m24un00008yt3rb67hh3uj',
@@ -11,7 +11,7 @@ export const courses = [
   {
     id: 'cm0m26sih000ayt3rrw4yke29',
     slug: 'live-c-2k7',
-    name: 'LIVE C - Chuyên đề - Toán 2K7 - HTT',
+    name: 'LIVE C - Chuyên đề - Toán 2K7 - Thầy Tuấn',
     price: 1000000,
     oldPrice: 2000000,
     image: '/api/assets/course/cm0m26sih000ayt3rrw4yke29',
@@ -19,7 +19,7 @@ export const courses = [
   {
     id: 'cm0m2b4pv000cyt3rro70uqii',
     slug: 'live-t-2k7',
-    name: 'LIVE T - Luyện đề - Toán 2K7 - HTT',
+    name: 'LIVE T - Luyện đề - Toán 2K7 - Thầy Tuấn',
     price: 1000000,
     oldPrice: 2000000,
     image: '/api/assets/course/cm0m2b4pv000cyt3rro70uqii',
@@ -27,7 +27,7 @@ export const courses = [
   {
     id: 'cm0m2cabc000eyt3rrkgcv8zz',
     slug: 'live-g-2k7',
-    name: 'LIVE G - Tổng ôn - Toán học 2K7 - HTT',
+    name: 'LIVE G - Tổng ôn - Toán học 2K7 - Thầy Tuấn',
     price: 1000000,
     oldPrice: 2000000,
     image: '/api/assets/course/cm0m2cabc000eyt3rrkgcv8zz',
@@ -35,7 +35,7 @@ export const courses = [
   {
     id: 'cm0m2dyg4000gyt3r8vs2r8fx',
     slug: 'live-vip-hk1-2k8',
-    name: 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 1 2K8 THẦY HỒ THỨC THUẬN',
+    name: 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 1 2K8 THẦY TUẤN',
     price: 1200000,
     oldPrice: 2400000,
     image: '/api/assets/course/cm0m2dyg4000gyt3r8vs2r8fx',
@@ -43,7 +43,7 @@ export const courses = [
   {
     id: 'cm0m2fcma000iyt3r5cnoxxn3',
     slug: 'live-vip-hk2-2k8',
-    name: 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 2 2K8 THẦY HỒ THỨC THUẬN',
+    name: 'LIVE VIP TOÁN LỚP 11 HỌC KỲ 2 2K8 THẦY TUẤN',
     price: 1200000,
     oldPrice: 2400000,
     image: '/api/assets/course/cm0m2fcma000iyt3r5cnoxxn3',
@@ -61,14 +61,14 @@ export const courses = [
 export const combos = [
   {
     id: 'cm0m2hhi6000jyt3ra143ofm9',
-    name: 'COMBO LIVE VIP TOÁN 11 - Khoá 2K8 THẦY HỒ THỨC THUẬN',
+    name: 'COMBO LIVE VIP TOÁN 11 - Khoá 2K8 THẦY TUẤN',
     price: 1800000,
     oldPrice: 3600000,
     image: '/api/assets/combo/cm0m2hhi6000jyt3ra143ofm9',
   },
   {
     id: 'cm0m2ix9e000kyt3rec9bmop3',
-    name: 'COMBO CTG TOÁN 2K7 - HTT',
+    name: 'COMBO CTG TOÁN 2K7 - Thầy Tuấn',
     price: 2000000,
     oldPrice: 4000000,
     image: '/api/assets/combo/cm0m2ix9e000kyt3rec9bmop3',

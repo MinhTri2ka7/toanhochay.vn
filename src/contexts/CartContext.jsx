@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext'
 
 const CartContext = createContext(null)
 
-const CART_KEY = 'thaythuan_cart'
+const CART_KEY = 'toanhochay_cart'
 
 function getLocalCart() {
   try {
@@ -22,9 +22,10 @@ export function CartProvider({ children }) {
 
   // Sync cart when user logs in
   useEffect(() => {
-    if (user) {
+    if (user && items.length > 0) {
       syncCartToServer()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   // Save to localStorage whenever items change

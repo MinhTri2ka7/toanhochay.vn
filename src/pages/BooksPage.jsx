@@ -32,7 +32,7 @@ export default function BooksPage() {
             <picture>
               <source media="(max-width: 47.9375em)" srcSet="/banner_book/banner_book_mobile.png" />
               <source media="(min-width: 48em)" srcSet="/banner_book/banner_book.png" />
-              <img alt="Banner Sách" className="mx-auto rounded-3xl object-contain object-center w-full" />
+              <img alt="Banner Sách" src="/banner_book/banner_book.png" className="mx-auto rounded-3xl object-contain object-center w-full" />
             </picture>
           </div>
         </div>

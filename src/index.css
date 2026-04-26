@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 /* ============================================
-   DESIGN TOKENS — thaythuan.vn Enhanced 2026
-   Matches original warm gold palette but refined
+   DESIGN TOKENS — toanhochay.vn 2026
+   Fresh layout, same warm soul
    ============================================ */
 @theme {
-  /* Brand Gold — exactly matching thaythuan.vn */
+  /* Brand Gold — warm educational palette */
   --color-brand-50: #FFF9ED;
   --color-brand-100: #FFF0D1;
   --color-brand-200: #FFE0A3;
@@ -16,6 +16,15 @@
   --color-brand-700: #A36D00;
   --color-brand-800: #6B4700;
   --color-brand-900: #362300;
+
+  /* Accent — Teal for freshness */
+  --color-accent-50: #EDFCF5;
+  --color-accent-100: #D1FAE5;
+  --color-accent-200: #A7F3D0;
+  --color-accent-300: #6EE7B7;
+  --color-accent-400: #34D399;
+  --color-accent-500: #10B981;
+  --color-accent-600: #059669;
 
   /* Navy for contrast sections */
   --color-navy-50: #EEF2FF;
@@ -29,12 +38,13 @@
   --color-navy-800: #141D54;
   --color-navy-900: #0B1130;
 
-  /* Shadows — Elegant depth */
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-  --shadow-card-hover: 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
-  --shadow-header: 0 4px 20px rgba(0,0,0,0.08);
-  --shadow-section: 0 8px 32px rgba(0,0,0,0.06);
-  --shadow-glow: 0 0 24px rgba(255,176,24,0.35);
+  /* Shadows — Layered depth system */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.05);
+  --shadow-card-hover: 0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-header: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-section: 0 12px 48px rgba(0,0,0,0.06);
+  --shadow-glow: 0 0 32px rgba(255,176,24,0.3);
+  --shadow-float: 0 20px 60px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);
 
   /* Animations */
   --animate-fade-in-up: fadeInUp 0.6s ease-out both;
@@ -44,6 +54,8 @@
   --animate-bounce-shake: combined-animation 3s infinite;
   --animate-spin-slow: spin 0.45s linear infinite;
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
 
   /* Font */
   --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
@@ -90,9 +102,42 @@
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes blob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-12deg); }
+  30% { transform: rotate(10deg); }
+  45% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(0deg); }
+}
+@keyframes ping-slow {
+  0% { transform: scale(1); opacity: 0.6; }
+  75%, 100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* FAB utility classes */
+.animate-wiggle { animation: wiggle 2s ease-in-out infinite; }
+.animate-ping-slow { animation: ping-slow 2s cubic-bezier(0,0,0.2,1) infinite; }
+.animate-fade-in { animation: fadeIn 0.2s ease-out both; }
 
 /* ============================================
-   GLOBAL STYLES — Solid cream background
+   GLOBAL STYLES
    ============================================ */
 html {
   line-height: 1.5;
@@ -104,7 +149,7 @@ html {
 body {
   font-family: var(--font-primary);
   color: var(--color-brand-900);
-  background: #FFF9ED;
+  background: #FFFBF2;
   margin: 0;
   min-height: 100vh;
 }
@@ -112,7 +157,7 @@ body {
 h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
 
 /* Interactive elements always show pointer cursor */
-button, [role="button"], a, select, 
+button, [role="button"], a, select,
 input[type="submit"], input[type="button"], input[type="reset"],
 input[type="checkbox"], input[type="radio"],
 label[for], summary, .cursor-pointer {
@@ -125,10 +170,10 @@ button:disabled, [disabled] {
 /* ============================================
    SCROLLBAR
    ============================================ */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(163,109,0,0.15); border-radius: 100px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(163,109,0,0.3); }
+::-webkit-scrollbar-thumb { background: rgba(163,109,0,0.12); border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(163,109,0,0.25); }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -139,25 +184,33 @@ button:disabled, [disabled] {
 .line-clamp-2 { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .line-clamp-3 { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 
-/* Glass header */
+/* Glass header — premium frosted */
 .glass {
-  background: rgba(255,255,255,0.78);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* Glass card — for overlays */
+.glass-card {
+  background: rgba(255,255,255,0.6);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.35);
+  border: 1px solid rgba(255,255,255,0.3);
 }
 
 /* Scroll reveal */
-.scroll-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+.scroll-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
 .scroll-reveal.revealed { opacity: 1; transform: translateY(0); }
-.scroll-reveal-left { opacity: 0; transform: translateX(-28px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+.scroll-reveal-left { opacity: 0; transform: translateX(-28px); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
 .scroll-reveal-left.revealed { opacity: 1; transform: translateX(0); }
 
-/* Accent line (section headers) — solid color */
-.accent-line { position: relative; padding-left: 16px; }
+/* Accent line (section headers) — thick modern bar */
+.accent-line { position: relative; padding-left: 18px; }
 .accent-line::before {
   content: ''; position: absolute; left: 0; top: 4px; bottom: 4px; width: 4px; border-radius: 2px;
-  background: var(--color-brand-600);
+  background: var(--color-brand-500);
 }
 
 /* Stagger children */
@@ -180,9 +233,64 @@ button:disabled, [disabled] {
 }
 
 /* ============================================
+   PREMIUM CARD SYSTEM
+   ============================================ */
+.card-premium {
+  background: white;
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-card);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+.card-premium:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+}
+
+/* Blob decorative shape */
+.blob {
+  animation: blob 8s ease-in-out infinite;
+}
+
+/* Marquee for trust bar */
+.marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Gradient text utility */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-brand-700), var(--color-brand-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   SECTION DIVIDER — wavy pattern
+   ============================================ */
+.section-divider {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-brand-200) 0px,
+    var(--color-brand-200) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+/* ============================================
    GLOBAL INTERACTIVE
    ============================================ */
 a, button { transition: all 0.2s ease; }
+
+/* Focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
 
 #nprogress { pointer-events: none; }
 #nprogress .bar {

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
-import { authenticateToken } from '../middleware/auth.js'
+import { authenticateToken, sanitizeInput } from '../middleware/auth.js'
 
 const router = Router()
 
@@ -94,6 +94,17 @@ router.post('/orders', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin' })
     }
 
+    // Duplicate order protection: check for pending orders in last 60 seconds
+    const recentCutoff = new Date(Date.now() - 60000).toISOString()
+    const { data: recentOrders } = await db.supabase
+      .from('orders').select('id')
+      .eq('user_id', req.user.id)
+      .eq('status', 'pending')
+      .gte('created_at', recentCutoff)
+    if (recentOrders && recentOrders.length > 0) {
+      return res.status(429).json({ error: 'Bạn vừa đặt hàng, vui lòng chờ 1 phút trước khi đặt lại' })
+    }
+
     const paymentCode = 'TT' + Date.now().toString(36).toUpperCase()
 
     // Calculate total & resolve product names
@@ -114,10 +125,11 @@ router.post('/orders', authenticateToken, async (req, res) => {
     const order = await db.insert('orders', {
       user_id: req.user.id,
       total_amount: totalAmount,
-      name, phone,
-      email: email || '',
-      address: address || '',
-      note: note || '',
+      name: sanitizeInput(name),
+      phone: sanitizeInput(phone),
+      email: sanitizeInput(email || ''),
+      address: sanitizeInput(address || ''),
+      note: sanitizeInput(note || ''),
       payment_code: paymentCode,
     })
 
