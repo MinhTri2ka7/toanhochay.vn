@@ -92,13 +92,25 @@ export default function CoursesPage() {
       {/* Banner */}
       <ScrollReveal>
         <div className="mb-6">
-          <div className="rounded-2xl lg:rounded-3xl overflow-hidden shadow-card">
-            <picture>
-              <source media="(max-width: 47.9375em)" srcSet="/banner_general/banner_general_mobile_1.png" />
-              <source media="(min-width: 48em)" srcSet="/banner_general/banner_general_1.png" />
-              <img alt="Banner Khóa học" src="/banner_general/banner_general_1.png"
-                   className="w-full object-cover rounded-2xl lg:rounded-3xl" />
-            </picture>
+          <div className="rounded-2xl lg:rounded-3xl overflow-hidden shadow-card"
+               style={{
+                 background: 'linear-gradient(135deg, #10b981 0%, #0d9488 50%, #0891b2 100%)',
+                 padding: '2.5rem 1.5rem',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 minHeight: '120px',
+               }}>
+            <h2 style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+              fontWeight: 900,
+              color: '#fff',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              textShadow: '0 2px 12px rgba(0,0,0,0.18)',
+              margin: 0,
+            }}>Khóa Học</h2>
           </div>
         </div>
       </ScrollReveal>

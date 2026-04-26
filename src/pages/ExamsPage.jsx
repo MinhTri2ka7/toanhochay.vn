@@ -36,13 +36,25 @@ export default function ExamsPage() {
       {/* Banner */}
       <ScrollReveal>
         <div className="mb-6">
-          <div className="rounded-2xl lg:rounded-3xl overflow-hidden shadow-card">
-            <picture>
-              <source media="(max-width: 47.9375em)" srcSet="/banner_exam/banner_exam_mobile.png" />
-              <source media="(min-width: 48em)" srcSet="/banner_exam/banner_exam.png" />
-              <img alt="Banner Thi thử" src="/banner_exam/banner_exam.png"
-                   className="w-full object-cover" />
-            </picture>
+          <div className="rounded-2xl lg:rounded-3xl overflow-hidden shadow-card"
+               style={{
+                 background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #dc2626 100%)',
+                 padding: '2.5rem 1.5rem',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 minHeight: '120px',
+               }}>
+            <h2 style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+              fontWeight: 900,
+              color: '#fff',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              textShadow: '0 2px 12px rgba(0,0,0,0.18)',
+              margin: 0,
+            }}>Thi Thử</h2>
           </div>
         </div>
       </ScrollReveal>

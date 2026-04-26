@@ -28,12 +28,25 @@ export default function BooksPage() {
       {/* Banner */}
       <ScrollReveal>
         <div className="mb-6">
-          <div className="rounded-3xl overflow-hidden shadow-card">
-            <picture>
-              <source media="(max-width: 47.9375em)" srcSet="/banner_book/banner_book_mobile.png" />
-              <source media="(min-width: 48em)" srcSet="/banner_book/banner_book.png" />
-              <img alt="Banner Sách" src="/banner_book/banner_book.png" className="mx-auto rounded-3xl object-contain object-center w-full" />
-            </picture>
+          <div className="rounded-2xl lg:rounded-3xl overflow-hidden shadow-card"
+               style={{
+                 background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #a855f7 100%)',
+                 padding: '2.5rem 1.5rem',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 minHeight: '120px',
+               }}>
+            <h2 style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+              fontWeight: 900,
+              color: '#fff',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              textShadow: '0 2px 12px rgba(0,0,0,0.18)',
+              margin: 0,
+            }}>Sách Bài Tập</h2>
           </div>
         </div>
       </ScrollReveal>
