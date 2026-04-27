@@ -503,7 +503,7 @@ router.post('/exams/:id/questions', async (req, res) => {
   try {
     const { question_type, question_text, image, option_a, option_b, option_c, option_d,
             option_a_image, option_b_image, option_c_image, option_d_image,
-            correct_answer, explanation } = req.body
+            correct_answer, explanation, points_correct, points_wrong } = req.body
     if (!question_text) return res.status(400).json({ error: 'Nội dung câu hỏi không được để trống' })
     const count = await db.count('questions', { test_id: parseInt(req.params.id) })
     await db.insert('questions', {
@@ -514,6 +514,7 @@ router.post('/exams/:id/questions', async (req, res) => {
       option_c_image: option_c_image || '', option_d_image: option_d_image || '',
       correct_answer: correct_answer || null,
       explanation: explanation || '', sort_order: count + 1,
+      points_correct: points_correct ?? 1, points_wrong: points_wrong ?? 0,
     })
     // Update total_questions
     const newCount = await db.count('questions', { test_id: parseInt(req.params.id) })

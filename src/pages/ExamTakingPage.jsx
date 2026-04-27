@@ -189,23 +189,17 @@ export default function ExamTakingPage() {
               </div>
               <div className="bg-emerald-50 rounded-2xl p-4">
                 <p className="text-3xl font-bold text-emerald-600">{results.correctCount}</p>
-                <p className="text-xs text-gray-500">Đúng (+{results.pointsCorrect})</p>
+                <p className="text-xs text-gray-500">Đúng</p>
               </div>
               <div className="bg-red-50 rounded-2xl p-4">
                 <p className="text-3xl font-bold text-red-500">{results.wrongCount}</p>
-                <p className="text-xs text-gray-500">Sai {results.pointsWrong > 0 ? `(−${results.pointsWrong})` : ''}</p>
+                <p className="text-xs text-gray-500">Sai</p>
               </div>
               <div className="bg-gray-50 rounded-2xl p-4">
                 <p className="text-3xl font-bold text-gray-400">{results.unansweredCount}</p>
                 <p className="text-xs text-gray-500">Bỏ qua</p>
               </div>
             </div>
-
-            {results.pointsWrong > 0 && (
-              <p className="text-xs text-gray-500 mb-4 bg-amber-50 rounded-lg py-2 px-3">
-                📐 Công thức: {results.correctCount}×{results.pointsCorrect} − {results.wrongCount}×{results.pointsWrong} = <strong>{results.score}</strong>
-              </p>
-            )}
 
             <button onClick={() => navigate('/de-thi')}
                     className="inline-flex items-center gap-2 h-10 px-6 rounded-xl font-semibold
@@ -225,10 +219,16 @@ export default function ExamTakingPage() {
             return (
               <div key={q.id} className={`bg-white rounded-2xl shadow-card p-5 border-l-4
                                           ${isCorrect ? 'border-emerald-500' : isUnanswered ? 'border-gray-300' : 'border-red-400'}`}>
-                <p className="font-semibold text-sm mb-3">
-                  <span className="text-gray-400 mr-2">Câu {idx + 1}.</span>
-                  {q.question_text}
-                </p>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <p className="font-semibold text-sm">
+                    <span className="text-gray-400 mr-2">Câu {idx + 1}.</span>
+                    {q.question_text}
+                  </p>
+                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-bold
+                    ${isCorrect ? 'bg-emerald-100 text-emerald-700' : isUnanswered ? 'bg-gray-100 text-gray-400' : 'bg-red-100 text-red-600'}`}>
+                    {result?.pointsEarned > 0 ? `+${result.pointsEarned}` : result?.pointsEarned ?? 0}
+                  </span>
+                </div>
                 {q.image && <img src={q.image} alt="" className="max-h-48 rounded-lg border border-gray-200 mb-3 object-contain" />}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   {['A', 'B', 'C', 'D'].map(opt => {

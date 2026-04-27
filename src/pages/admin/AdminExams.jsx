@@ -7,7 +7,7 @@ const emptyQ = {
   question_type: 'multiple_choice', question_text: '', image: '',
   option_a: '', option_b: '', option_c: '', option_d: '',
   option_a_image: '', option_b_image: '', option_c_image: '', option_d_image: '',
-  correct_answer: 'A', explanation: '',
+  correct_answer: 'A', explanation: '', points_correct: 1, points_wrong: 0,
 }
 
 export default function AdminExams() {
@@ -187,7 +187,7 @@ export default function AdminExams() {
                 <p className="text-sm text-gray-500 line-clamp-1">{qOverlayExam.title}</p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { setQForm(emptyQ); setShowQModal(true) }}
+                <button onClick={() => { setQForm({...emptyQ, points_correct: qOverlayExam.points_correct ?? 1, points_wrong: qOverlayExam.points_wrong ?? 0}); setShowQModal(true) }}
                         className="flex items-center gap-1 h-8 px-3 rounded-lg text-xs font-semibold bg-brand-600 text-white hover:bg-brand-700">
                   <Plus size={12} /> Thêm câu hỏi
                 </button>
@@ -206,7 +206,7 @@ export default function AdminExams() {
                 <div className="text-center py-16">
                   <FileText size={40} className="mx-auto text-gray-300 mb-3" />
                   <p className="text-gray-400">Chưa có câu hỏi nào</p>
-                  <button onClick={() => { setQForm(emptyQ); setShowQModal(true) }}
+                  <button onClick={() => { setQForm({...emptyQ, points_correct: qOverlayExam.points_correct ?? 1, points_wrong: qOverlayExam.points_wrong ?? 0}); setShowQModal(true) }}
                           className="mt-3 text-sm text-brand-600 font-semibold hover:underline">
                     + Thêm câu hỏi đầu tiên
                   </button>
@@ -215,12 +215,14 @@ export default function AdminExams() {
                 <div key={q.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-bold text-gray-400">Câu {idx + 1}</span>
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold
                           ${q.question_type === 'essay' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                           {q.question_type === 'essay' ? '✏️ Tự luận' : '📝 Trắc nghiệm'}
                         </span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">+{q.points_correct ?? 1}</span>
+                        {(q.points_wrong ?? 0) > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-600">−{q.points_wrong}</span>}
                       </div>
                       <p className="text-sm font-medium text-gray-800">{q.question_text}</p>
                     </div>
@@ -420,6 +422,25 @@ export default function AdminExams() {
                   <p className="text-xs text-gray-400">Bấm vào chữ cái (A/B/C/D) để chọn đáp án đúng. Ảnh đáp án là tuỳ chọn.</p>
                 </>
               )}
+
+              {/* Per-question scoring */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <p className="text-xs font-semibold text-amber-800 mb-2">⚡ Điểm cho câu này</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-emerald-700 mb-1">Đúng được (+)</label>
+                    <input type="number" value={qForm.points_correct} onChange={e => setQForm(f => ({ ...f, points_correct: +e.target.value }))}
+                           min="0" step="0.25"
+                           className="w-full h-8 px-3 rounded-lg border border-amber-200 text-sm bg-white focus:border-brand-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-red-600 mb-1">Sai bị trừ (−)</label>
+                    <input type="number" value={qForm.points_wrong} onChange={e => setQForm(f => ({ ...f, points_wrong: +e.target.value }))}
+                           min="0" step="0.25"
+                           className="w-full h-8 px-3 rounded-lg border border-amber-200 text-sm bg-white focus:border-brand-500 outline-none" />
+                  </div>
+                </div>
+              </div>
 
               {/* Explanation */}
               <div>

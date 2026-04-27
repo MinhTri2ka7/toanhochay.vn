@@ -139,34 +139,43 @@ router.post('/exams/:id/submit', async (req, res) => {
     const exam = await db.selectOne('mock_tests', { id: testId })
     if (!exam) return res.status(404).json({ error: 'Không tìm thấy đề thi' })
 
-    const pointsCorrect = exam.points_correct ?? 1
-    const pointsWrong = exam.points_wrong ?? 0
-
     const questions = await db.selectAll('questions', {
       where: { test_id: testId },
       order: { column: 'sort_order', ascending: true },
-      columns: 'id, correct_answer, explanation'
+      columns: 'id, correct_answer, explanation, points_correct, points_wrong'
     })
 
     let correctCount = 0
     let wrongCount = 0
     let unansweredCount = 0
+    let totalScore = 0
+    let maxScore = 0
+
     const resultsArr = questions.map(q => {
+      const pc = q.points_correct ?? 1
+      const pw = q.points_wrong ?? 0
+      maxScore += pc
+
       const userAnswer = answers?.[q.id] || ''
       if (!userAnswer) {
         unansweredCount++
-        return { questionId: q.id, userAnswer: '', correctAnswer: q.correct_answer, isCorrect: false, isUnanswered: true, explanation: q.explanation }
+        return { questionId: q.id, userAnswer: '', correctAnswer: q.correct_answer, isCorrect: false, isUnanswered: true, explanation: q.explanation, pointsCorrect: pc, pointsWrong: pw, pointsEarned: 0 }
       }
       const isCorrect = userAnswer === q.correct_answer
-      if (isCorrect) correctCount++
-      else wrongCount++
-      return { questionId: q.id, userAnswer, correctAnswer: q.correct_answer, isCorrect, isUnanswered: false, explanation: q.explanation }
+      let earned = 0
+      if (isCorrect) {
+        correctCount++
+        earned = pc
+      } else {
+        wrongCount++
+        earned = -pw
+      }
+      totalScore += earned
+      return { questionId: q.id, userAnswer, correctAnswer: q.correct_answer, isCorrect, isUnanswered: false, explanation: q.explanation, pointsCorrect: pc, pointsWrong: pw, pointsEarned: earned }
     })
 
-    // Score = correct * pointsCorrect - wrong * pointsWrong
-    const rawScore = (correctCount * pointsCorrect) - (wrongCount * pointsWrong)
-    const score = Math.max(0, parseFloat(rawScore.toFixed(2)))
-    const maxScore = parseFloat((questions.length * pointsCorrect).toFixed(2))
+    const score = Math.max(0, parseFloat(totalScore.toFixed(2)))
+    maxScore = parseFloat(maxScore.toFixed(2))
 
     // Save result if user is logged in
     const userId = req.user?.id || null
@@ -185,7 +194,6 @@ router.post('/exams/:id/submit', async (req, res) => {
     res.json({
       score, maxScore, correctCount, wrongCount, unansweredCount,
       totalQuestions: questions.length,
-      pointsCorrect, pointsWrong,
       results: resultsArr,
     })
   } catch (err) {
