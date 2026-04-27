@@ -119,9 +119,11 @@ export default function AdminCourses() {
                   <td className="px-4 py-3 text-gray-500">{c.slug}</td>
                   <td className="px-4 py-3 text-center">
                     {c.category ? (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">{c.category}</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                        {categories.find(cat => cat.category === c.category)?.title || c.category}
+                      </span>
                     ) : (
-                      <span className="text-xs text-red-400 font-semibold">Chưa gán</span>
+                      <span className="text-xs text-gray-400">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right font-semibold text-brand-700">{formatPrice(c.price)}đ</td>

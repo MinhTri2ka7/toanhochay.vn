@@ -121,7 +121,9 @@ export default function AdminBooks() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     {b.category ? (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">{b.category}</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                        {categories.find(cat => cat.category === b.category)?.title || b.category}
+                      </span>
                     ) : (
                       <span className="text-xs text-gray-400">—</span>
                     )}
