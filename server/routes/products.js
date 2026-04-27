@@ -139,6 +139,9 @@ router.post('/exams/:id/submit', async (req, res) => {
     const exam = await db.selectOne('mock_tests', { id: testId })
     if (!exam) return res.status(404).json({ error: 'Không tìm thấy đề thi' })
 
+    const pointsCorrect = exam.points_correct ?? 1
+    const pointsWrong = exam.points_wrong ?? 0
+
     const questions = await db.selectAll('questions', {
       where: { test_id: testId },
       order: { column: 'sort_order', ascending: true },
@@ -146,14 +149,24 @@ router.post('/exams/:id/submit', async (req, res) => {
     })
 
     let correctCount = 0
-    const results = questions.map(q => {
+    let wrongCount = 0
+    let unansweredCount = 0
+    const resultsArr = questions.map(q => {
       const userAnswer = answers?.[q.id] || ''
+      if (!userAnswer) {
+        unansweredCount++
+        return { questionId: q.id, userAnswer: '', correctAnswer: q.correct_answer, isCorrect: false, isUnanswered: true, explanation: q.explanation }
+      }
       const isCorrect = userAnswer === q.correct_answer
       if (isCorrect) correctCount++
-      return { questionId: q.id, userAnswer, correctAnswer: q.correct_answer, isCorrect, explanation: q.explanation }
+      else wrongCount++
+      return { questionId: q.id, userAnswer, correctAnswer: q.correct_answer, isCorrect, isUnanswered: false, explanation: q.explanation }
     })
 
-    const score = questions.length > 0 ? (correctCount / questions.length * 10).toFixed(2) : 0
+    // Score = correct * pointsCorrect - wrong * pointsWrong
+    const rawScore = (correctCount * pointsCorrect) - (wrongCount * pointsWrong)
+    const score = Math.max(0, parseFloat(rawScore.toFixed(2)))
+    const maxScore = parseFloat((questions.length * pointsCorrect).toFixed(2))
 
     // Save result if user is logged in
     const userId = req.user?.id || null
@@ -162,14 +175,19 @@ router.post('/exams/:id/submit', async (req, res) => {
         user_id: userId,
         test_id: testId,
         answers: answers || {},
-        score: parseFloat(score),
+        score,
         correct_count: correctCount,
         total_questions: questions.length,
         time_spent: timeSpent || 0,
       })
     }
 
-    res.json({ score: parseFloat(score), correctCount, totalQuestions: questions.length, results })
+    res.json({
+      score, maxScore, correctCount, wrongCount, unansweredCount,
+      totalQuestions: questions.length,
+      pointsCorrect, pointsWrong,
+      results: resultsArr,
+    })
   } catch (err) {
     console.error('Submit error:', err)
     res.status(500).json({ error: 'Lỗi server' })

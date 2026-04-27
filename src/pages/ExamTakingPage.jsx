@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Clock, CheckCircle, XCircle, ArrowLeft, Send, Loader2, Lock } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, ArrowLeft, Send, Loader2, Lock, MinusCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import ScrollReveal from '../components/ScrollReveal'
 
@@ -182,20 +182,30 @@ export default function ExamTakingPage() {
             </h1>
             <p className="text-gray-500 mb-6">{exam.title}</p>
 
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               <div className="bg-brand-50 rounded-2xl p-4">
                 <p className="text-3xl font-bold text-brand-700">{results.score}</p>
-                <p className="text-xs text-gray-500">Điểm</p>
+                <p className="text-xs text-gray-500">Điểm / {results.maxScore}</p>
               </div>
               <div className="bg-emerald-50 rounded-2xl p-4">
                 <p className="text-3xl font-bold text-emerald-600">{results.correctCount}</p>
-                <p className="text-xs text-gray-500">Đúng</p>
+                <p className="text-xs text-gray-500">Đúng (+{results.pointsCorrect})</p>
               </div>
               <div className="bg-red-50 rounded-2xl p-4">
-                <p className="text-3xl font-bold text-red-500">{results.totalQuestions - results.correctCount}</p>
-                <p className="text-xs text-gray-500">Sai</p>
+                <p className="text-3xl font-bold text-red-500">{results.wrongCount}</p>
+                <p className="text-xs text-gray-500">Sai {results.pointsWrong > 0 ? `(−${results.pointsWrong})` : ''}</p>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-3xl font-bold text-gray-400">{results.unansweredCount}</p>
+                <p className="text-xs text-gray-500">Bỏ qua</p>
               </div>
             </div>
+
+            {results.pointsWrong > 0 && (
+              <p className="text-xs text-gray-500 mb-4 bg-amber-50 rounded-lg py-2 px-3">
+                📐 Công thức: {results.correctCount}×{results.pointsCorrect} − {results.wrongCount}×{results.pointsWrong} = <strong>{results.score}</strong>
+              </p>
+            )}
 
             <button onClick={() => navigate('/de-thi')}
                     className="inline-flex items-center gap-2 h-10 px-6 rounded-xl font-semibold
@@ -211,26 +221,34 @@ export default function ExamTakingPage() {
           {exam.questions?.map((q, idx) => {
             const result = results.results?.find(r => r.questionId === q.id)
             const isCorrect = result?.isCorrect
+            const isUnanswered = result?.isUnanswered
             return (
               <div key={q.id} className={`bg-white rounded-2xl shadow-card p-5 border-l-4
-                                          ${isCorrect ? 'border-emerald-500' : 'border-red-400'}`}>
+                                          ${isCorrect ? 'border-emerald-500' : isUnanswered ? 'border-gray-300' : 'border-red-400'}`}>
                 <p className="font-semibold text-sm mb-3">
                   <span className="text-gray-400 mr-2">Câu {idx + 1}.</span>
                   {q.question_text}
                 </p>
+                {q.image && <img src={q.image} alt="" className="max-h-48 rounded-lg border border-gray-200 mb-3 object-contain" />}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   {['A', 'B', 'C', 'D'].map(opt => {
+                    const optText = q[`option_${opt.toLowerCase()}`]
+                    const optImg = q[`option_${opt.toLowerCase()}_image`]
+                    if (!optText && !optImg) return null
                     const isUserAnswer = result?.userAnswer === opt
                     const isCorrectAnswer = result?.correctAnswer === opt
                     let cls = 'border-gray-200 bg-gray-50'
                     if (isCorrectAnswer) cls = 'border-emerald-400 bg-emerald-50 text-emerald-700'
                     else if (isUserAnswer && !isCorrect) cls = 'border-red-400 bg-red-50 text-red-600'
                     return (
-                      <div key={opt} className={`px-3 py-2 rounded-lg border ${cls} flex items-center gap-2`}>
-                        <span className="font-bold w-5">{opt}.</span>
-                        {q[`option_${opt.toLowerCase()}`]}
-                        {isCorrectAnswer && <CheckCircle size={14} className="ml-auto text-emerald-500" />}
-                        {isUserAnswer && !isCorrect && <XCircle size={14} className="ml-auto text-red-400" />}
+                      <div key={opt} className={`px-3 py-2 rounded-lg border ${cls} flex flex-col gap-1`}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold w-5">{opt}.</span>
+                          <span className="flex-1">{optText}</span>
+                          {isCorrectAnswer && <CheckCircle size={14} className="ml-auto text-emerald-500 shrink-0" />}
+                          {isUserAnswer && !isCorrect && <XCircle size={14} className="ml-auto text-red-400 shrink-0" />}
+                        </div>
+                        {optImg && <img src={optImg} alt="" className="max-h-24 rounded object-contain" />}
                       </div>
                     )
                   })}
@@ -256,7 +274,10 @@ export default function ExamTakingPage() {
                       flex items-center justify-between">
         <div>
           <h1 className="font-bold text-brand-900 text-sm lg:text-base line-clamp-1">{exam.title}</h1>
-          <p className="text-xs text-gray-400">{exam.questions?.length || 0} câu hỏi</p>
+          <p className="text-xs text-gray-400">
+            {exam.questions?.length || 0} câu hỏi
+            {exam.points_wrong > 0 && <span className="text-red-500 ml-2">• Sai trừ {exam.points_wrong} điểm</span>}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm
@@ -286,24 +307,33 @@ export default function ExamTakingPage() {
                 </span>
                 {q.question_text}
               </p>
+              {q.image && <img src={q.image} alt="" className="max-h-56 rounded-lg border border-gray-200 mb-4 object-contain" />}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {['A', 'B', 'C', 'D'].map(opt => (
-                  <button
-                    key={opt}
-                    onClick={() => selectAnswer(q.id, opt)}
-                    className={`text-left px-4 py-3 rounded-xl border-2 text-sm font-medium
-                                transition-all duration-200 flex items-center gap-2
-                                ${answers[q.id] === opt
-                                  ? 'border-brand-500 bg-brand-50 text-brand-800'
-                                  : 'border-gray-200'}`}
-                  >
-                    <span className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0
-                                     ${answers[q.id] === opt ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300'}">
-                      {opt}
-                    </span>
-                    {q[`option_${opt.toLowerCase()}`]}
-                  </button>
-                ))}
+                {['A', 'B', 'C', 'D'].map(opt => {
+                  const optText = q[`option_${opt.toLowerCase()}`]
+                  const optImg = q[`option_${opt.toLowerCase()}_image`]
+                  if (!optText && !optImg) return null
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => selectAnswer(q.id, opt)}
+                      className={`text-left px-4 py-3 rounded-xl border-2 text-sm font-medium
+                                  transition-all duration-200 flex flex-col gap-1
+                                  ${answers[q.id] === opt
+                                    ? 'border-brand-500 bg-brand-50 text-brand-800'
+                                    : 'border-gray-200 hover:border-gray-300'}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0
+                                         ${answers[q.id] === opt ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300'}`}>
+                          {opt}
+                        </span>
+                        {optText && <span>{optText}</span>}
+                      </div>
+                      {optImg && <img src={optImg} alt="" className="max-h-32 rounded-lg object-contain mt-1 ml-8" />}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </ScrollReveal>

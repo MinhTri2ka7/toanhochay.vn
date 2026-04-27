@@ -2,8 +2,13 @@ import { useState, useEffect } from 'react'
 import { Plus, X, Trash2, ToggleLeft, ToggleRight, FileText, PenLine, List, Image as ImageIcon } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
-const emptyExam = { title: '', subject: 'math', duration: 90, difficulty: 'medium', passcode: '', status: 'active' }
-const emptyQ = { question_type: 'multiple_choice', question_text: '', image: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', explanation: '' }
+const emptyExam = { title: '', subject: 'math', duration: 90, difficulty: 'medium', passcode: '', status: 'active', points_correct: 1, points_wrong: 0 }
+const emptyQ = {
+  question_type: 'multiple_choice', question_text: '', image: '',
+  option_a: '', option_b: '', option_c: '', option_d: '',
+  option_a_image: '', option_b_image: '', option_c_image: '', option_d_image: '',
+  correct_answer: 'A', explanation: '',
+}
 
 export default function AdminExams() {
   const [exams, setExams] = useState([])
@@ -15,7 +20,7 @@ export default function AdminExams() {
   const [error, setError] = useState('')
 
   // Questions overlay
-  const [qOverlayExam, setQOverlayExam] = useState(null) // the exam whose questions are shown
+  const [qOverlayExam, setQOverlayExam] = useState(null)
   const [questions, setQuestions] = useState([])
   const [loadingQ, setLoadingQ] = useState(false)
   const [showQModal, setShowQModal] = useState(false)
@@ -45,7 +50,11 @@ export default function AdminExams() {
 
   function openEdit(exam) {
     setEditing(exam)
-    setForm({ title: exam.title, subject: exam.subject, duration: exam.duration, difficulty: exam.difficulty, passcode: exam.passcode || '', status: exam.status })
+    setForm({
+      title: exam.title, subject: exam.subject, duration: exam.duration,
+      difficulty: exam.difficulty, passcode: exam.passcode || '', status: exam.status,
+      points_correct: exam.points_correct ?? 1, points_wrong: exam.points_wrong ?? 0,
+    })
     setError(''); setShowModal(true)
   }
 
@@ -129,7 +138,6 @@ export default function AdminExams() {
         {exams.map(e => (
           <div key={e.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-4 py-3 flex items-center gap-3">
-              {/* Open questions overlay button */}
               <button onClick={() => openQuestions(e)}
                       className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 hover:bg-brand-100 hover:text-brand-700 transition-colors"
                       title="Xem câu hỏi">
@@ -141,6 +149,9 @@ export default function AdminExams() {
                   <span>{e.duration} phút</span>
                   <span>•</span>
                   <span>{e.total_questions} câu</span>
+                  <span>•</span>
+                  <span className="text-emerald-600">+{e.points_correct ?? 1}</span>
+                  {(e.points_wrong ?? 0) > 0 && <span className="text-red-500">−{e.points_wrong}</span>}
                   {e.passcode && <><span>•</span><span className="text-purple-600">🔒 Có mật khẩu</span></>}
                 </div>
               </div>
@@ -163,17 +174,13 @@ export default function AdminExams() {
       </div>
 
       {/* =====================================================
-          QUESTIONS OVERLAY — slides in from right
+          QUESTIONS OVERLAY
           ===================================================== */}
       {qOverlayExam && (
         <div className="fixed inset-0 z-40 flex">
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setQOverlayExam(null)} />
-
-          {/* Panel */}
           <div className="ml-auto relative w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col"
                style={{ animation: 'slideDrawerIn 0.25s ease-out' }}>
-            {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Câu hỏi đề thi</h2>
@@ -222,7 +229,7 @@ export default function AdminExams() {
                     </button>
                   </div>
 
-                  {/* Image */}
+                  {/* Question image */}
                   {q.image && (
                     <div className="mt-2">
                       <img src={q.image} alt="Question" className="max-h-40 rounded-lg border border-gray-200 object-contain" />
@@ -234,13 +241,15 @@ export default function AdminExams() {
                     <div className="grid grid-cols-2 gap-1.5 mt-3">
                       {['A', 'B', 'C', 'D'].map(opt => {
                         const val = q[`option_${opt.toLowerCase()}`]
-                        if (!val) return null
+                        const img = q[`option_${opt.toLowerCase()}_image`]
+                        if (!val && !img) return null
                         return (
                           <div key={opt} className={`px-2.5 py-1.5 rounded-lg text-xs border
                             ${q.correct_answer === opt
                               ? 'bg-emerald-50 border-emerald-300 text-emerald-700 font-bold'
                               : 'bg-white border-gray-200 text-gray-600'}`}>
                             <span className="font-bold">{opt}.</span> {val}
+                            {img && <img src={img} alt={`Option ${opt}`} className="mt-1 max-h-16 rounded object-contain" />}
                           </div>
                         )
                       })}
@@ -269,7 +278,7 @@ export default function AdminExams() {
       {/* Exam Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6" onClick={ev => ev.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto" onClick={ev => ev.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">{editing ? 'Sửa đề thi' : 'Tạo đề thi mới'}</h2>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"><X size={18} /></button>
@@ -298,6 +307,29 @@ export default function AdminExams() {
                   </select>
                 </div>
               </div>
+
+              {/* Scoring config */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p className="text-sm font-semibold text-blue-800 mb-2">⚡ Cấu hình điểm</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-blue-700 mb-1">Đúng được (+)</label>
+                    <input type="number" value={form.points_correct} onChange={e => setForm(f => ({ ...f, points_correct: +e.target.value }))}
+                           min="0" step="0.25"
+                           className="w-full h-9 px-3 rounded-lg border border-blue-200 text-sm bg-white focus:border-brand-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-red-600 mb-1">Sai bị trừ (−)</label>
+                    <input type="number" value={form.points_wrong} onChange={e => setForm(f => ({ ...f, points_wrong: +e.target.value }))}
+                           min="0" step="0.25"
+                           className="w-full h-9 px-3 rounded-lg border border-red-200 text-sm bg-white focus:border-brand-500 outline-none" />
+                  </div>
+                </div>
+                <p className="text-[11px] text-blue-600 mt-2">
+                  VD: Đúng +1, Sai −0.25 → Trả lời đúng 8/10 câu = 8×1 − 2×0.25 = <strong>7.5 điểm</strong>
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu đề thi (để trống = công khai)</label>
                 <input type="text" value={form.passcode} onChange={e => setForm(f => ({ ...f, passcode: e.target.value }))}
@@ -351,35 +383,41 @@ export default function AdminExams() {
               </div>
 
               {/* Image upload */}
-              <ImageUpload value={qForm.image} onChange={v => setQForm(f => ({ ...f, image: v }))} label="Ảnh đính kèm (tuỳ chọn)" />
+              <ImageUpload value={qForm.image} onChange={v => setQForm(f => ({ ...f, image: v }))} label="Ảnh đính kèm câu hỏi (tuỳ chọn)" />
 
               {/* Multiple choice options */}
               {qForm.question_type === 'multiple_choice' && (
                 <>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['A', 'B', 'C', 'D'].map(opt => (
-                      <div key={opt}>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Đáp án {opt}</label>
-                        <input type="text" value={qForm[`option_${opt.toLowerCase()}`]}
-                               onChange={e => setQForm(f => ({ ...f, [`option_${opt.toLowerCase()}`]: e.target.value }))}
-                               className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    {['A', 'B', 'C', 'D'].map(opt => {
+                      const key = opt.toLowerCase()
+                      return (
+                        <div key={opt} className={`rounded-xl border-2 p-3 transition-all
+                          ${qForm.correct_answer === opt ? 'border-emerald-400 bg-emerald-50/50' : 'border-gray-200'}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <button type="button" onClick={() => setQForm(f => ({ ...f, correct_answer: opt }))}
+                                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-all
+                                      ${qForm.correct_answer === opt
+                                        ? 'border-emerald-500 bg-emerald-500 text-white'
+                                        : 'border-gray-300 text-gray-400 hover:border-gray-400'}`}>
+                              {opt}
+                            </button>
+                            <input type="text" value={qForm[`option_${key}`]}
+                                   onChange={e => setQForm(f => ({ ...f, [`option_${key}`]: e.target.value }))}
+                                   placeholder={`Nội dung đáp án ${opt}`}
+                                   className="flex-1 h-8 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+                          </div>
+                          {/* Option image upload */}
+                          <ImageUpload
+                            value={qForm[`option_${key}_image`]}
+                            onChange={v => setQForm(f => ({ ...f, [`option_${key}_image`]: v }))}
+                            label={`Ảnh đáp án ${opt} (tuỳ chọn)`}
+                          />
+                        </div>
+                      )
+                    })}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Đáp án đúng</label>
-                    <div className="flex gap-2">
-                      {['A', 'B', 'C', 'D'].map(opt => (
-                        <button key={opt} type="button" onClick={() => setQForm(f => ({ ...f, correct_answer: opt }))}
-                                className={`flex-1 h-9 rounded-lg text-sm font-bold transition-all border-2
-                                  ${qForm.correct_answer === opt
-                                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                                    : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}>
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="text-xs text-gray-400">Bấm vào chữ cái (A/B/C/D) để chọn đáp án đúng. Ảnh đáp án là tuỳ chọn.</p>
                 </>
               )}
 

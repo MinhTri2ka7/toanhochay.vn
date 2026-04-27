@@ -438,11 +438,12 @@ router.get('/exams', async (req, res) => {
 
 router.post('/exams', async (req, res) => {
   try {
-    const { title, subject, duration, difficulty, passcode } = req.body
+    const { title, subject, duration, difficulty, passcode, points_correct, points_wrong } = req.body
     if (!title || !title.trim()) return res.status(400).json({ error: 'Tiêu đề không được để trống' })
     const exam = await db.insert('mock_tests', {
       title, subject: subject || 'math', duration: duration || 90,
       total_questions: 0, difficulty: difficulty || 'medium', passcode: passcode || null,
+      points_correct: points_correct ?? 1, points_wrong: points_wrong ?? 0,
     })
     res.status(201).json({ message: 'Tạo đề thi thành công', id: exam.id })
   } catch (err) {
@@ -452,9 +453,12 @@ router.post('/exams', async (req, res) => {
 
 router.put('/exams/:id', async (req, res) => {
   try {
-    const { title, subject, duration, difficulty, passcode, status } = req.body
+    const { title, subject, duration, difficulty, passcode, status, points_correct, points_wrong } = req.body
     if (!title || !title.trim()) return res.status(400).json({ error: 'Tiêu đề không được để trống' })
-    await db.update('mock_tests', { title, subject, duration, difficulty, passcode: passcode || null, status }, { id: parseInt(req.params.id) })
+    await db.update('mock_tests', {
+      title, subject, duration, difficulty, passcode: passcode || null, status,
+      points_correct: points_correct ?? 1, points_wrong: points_wrong ?? 0,
+    }, { id: parseInt(req.params.id) })
     res.json({ message: 'Cập nhật thành công' })
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server' })
@@ -497,13 +501,18 @@ router.get('/exams/:id/questions', async (req, res) => {
 
 router.post('/exams/:id/questions', async (req, res) => {
   try {
-    const { question_type, question_text, image, option_a, option_b, option_c, option_d, correct_answer, explanation } = req.body
+    const { question_type, question_text, image, option_a, option_b, option_c, option_d,
+            option_a_image, option_b_image, option_c_image, option_d_image,
+            correct_answer, explanation } = req.body
     if (!question_text) return res.status(400).json({ error: 'Nội dung câu hỏi không được để trống' })
     const count = await db.count('questions', { test_id: parseInt(req.params.id) })
     await db.insert('questions', {
       test_id: parseInt(req.params.id), question_type: question_type || 'multiple_choice',
       question_text, image: image || null, option_a: option_a || null, option_b: option_b || null,
-      option_c: option_c || null, option_d: option_d || null, correct_answer: correct_answer || null,
+      option_c: option_c || null, option_d: option_d || null,
+      option_a_image: option_a_image || '', option_b_image: option_b_image || '',
+      option_c_image: option_c_image || '', option_d_image: option_d_image || '',
+      correct_answer: correct_answer || null,
       explanation: explanation || '', sort_order: count + 1,
     })
     // Update total_questions
