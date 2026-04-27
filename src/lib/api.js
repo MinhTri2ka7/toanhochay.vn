@@ -12,6 +12,9 @@ const API_BASE = '/api'
 const cache = new Map()
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
+// In-flight request dedup — prevents multiple concurrent fetches for the same endpoint
+const inflight = new Map()
+
 function getCached(key) {
   const entry = cache.get(key)
   if (!entry) return null
@@ -57,13 +60,31 @@ async function apiFetch(endpoint, options = {}) {
   return res.json()
 }
 
-// Cached GET — returns cache instantly, skips network if fresh
+// Cached GET — returns cache instantly, deduplicates in-flight requests
 async function cachedFetch(endpoint) {
+  // 1. Return from cache instantly (synchronous path)
   const cached = getCached(endpoint)
   if (cached) return cached
-  const data = await apiFetch(endpoint)
-  setCache(endpoint, data)
-  return data
+
+  // 2. Deduplicate: if this endpoint is already being fetched, reuse the promise
+  if (inflight.has(endpoint)) {
+    return inflight.get(endpoint)
+  }
+
+  // 3. Start fetch and track the promise
+  const promise = apiFetch(endpoint)
+    .then(data => {
+      setCache(endpoint, data)
+      inflight.delete(endpoint)
+      return data
+    })
+    .catch(err => {
+      inflight.delete(endpoint)
+      throw err
+    })
+
+  inflight.set(endpoint, promise)
+  return promise
 }
 
 // ============================================
@@ -104,6 +125,22 @@ export async function fetchSettings() {
 
 export async function fetchHomepageSections() {
   return cachedFetch('/homepage-sections')
+}
+
+// ============================================
+// PREFETCH — fire & forget to warm cache
+// ============================================
+export function prefetchPublicData() {
+  // Warm cache for all commonly-visited pages
+  fetchCourses().catch(() => {})
+  fetchCombos().catch(() => {})
+  fetchBooks().catch(() => {})
+  fetchExams().catch(() => {})
+  fetchDocuments().catch(() => {})
+  fetchHomepageSections().catch(() => {})
+  fetchSettings().catch(() => {})
+  fetchFeedbacks('honor').catch(() => {})
+  fetchFeedbacks('feedback').catch(() => {})
 }
 
 // ============================================

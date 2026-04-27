@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { ShoppingCart, Menu, X, User, LogOut, ChevronRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -28,15 +28,19 @@ export default function Layout() {
   const siteName = settings.site_name || 'Toán Học Hay'
 
   useEffect(() => {
-    const handleScroll = () => setIsFloating(window.scrollY > 50)
-    window.addEventListener('scroll', handleScroll)
+    const handleScroll = () => {
+      const shouldFloat = window.scrollY > 50
+      if (shouldFloat !== isFloating) setIsFloating(shouldFloat)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isFloating])
 
   useEffect(() => {
     setMobileMenuOpen(false)
     setUserMenuOpen(false)
-    window.scrollTo(0, 0)
+    // Use instant scroll — no smooth delay when navigating
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [location.pathname])
 
   useEffect(() => {
@@ -44,10 +48,10 @@ export default function Layout() {
     return () => { document.body.style.overflow = '' }
   }, [mobileMenuOpen])
 
-  async function handleLogout() {
+  const handleLogout = useCallback(async () => {
     await logout()
     navigate('/')
-  }
+  }, [logout, navigate])
 
   return (
     <div className="min-h-screen pt-16">

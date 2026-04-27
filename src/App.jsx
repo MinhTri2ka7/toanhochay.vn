@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import Layout from './components/Layout'
+import { prefetchPublicData } from './lib/api'
 import './index.css'
 
 // ============================================
@@ -41,11 +42,15 @@ const AdminSections = lazy(() => import('./pages/admin/AdminSections'))
 const AdminAbout = lazy(() => import('./pages/admin/AdminAbout'))
 
 // ============================================
-// PREFETCH — preload public pages after initial render
+// PREFETCH — warm API cache + preload JS chunks after initial render
 // so tab switching is instant (no spinner)
 // ============================================
 if (typeof window !== 'undefined') {
   window.addEventListener('load', () => {
+    // Warm the API data cache immediately — this is the key to removing delay
+    prefetchPublicData()
+
+    // Preload JS chunks after a short delay (lower priority)
     setTimeout(() => {
       import('./pages/CoursesPage')
       import('./pages/BooksPage')
@@ -58,12 +63,12 @@ if (typeof window !== 'undefined') {
       import('./pages/CheckoutPage')
       import('./pages/ActivatePage')
       import('./pages/ExamTakingPage')
-    }, 1500)
+    }, 800)
   }, { once: true })
 }
 
 // ============================================
-// LOADING SPINNER
+// LOADING SPINNER — minimal, quick fade
 // ============================================
 function PageLoader() {
   return (

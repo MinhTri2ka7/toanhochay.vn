@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { BookCopy, LibraryBig, BookText, ChevronRight, ChevronDown, Sparkles, Loader2, GraduationCap, Users, Trophy, Zap, ArrowRight } from 'lucide-react'
 import CourseCard from '../components/CourseCard'
 import ImageCarousel from '../components/ImageCarousel'
 import ScrollReveal from '../components/ScrollReveal'
-import { fetchHomepageSections, fetchFeedbacks, fetchSettings } from '../lib/api'
+import { useSettings } from '../contexts/SettingsContext'
+import { fetchHomepageSections, fetchFeedbacks } from '../lib/api'
 
 const sectionIcons = {
   COMBOS: BookCopy,
@@ -13,22 +14,20 @@ const sectionIcons = {
 }
 
 /* ========== Trust Stats Marquee ========== */
+const trustStats = [
+  { icon: GraduationCap, text: '8+ năm kinh nghiệm' },
+  { icon: Users, text: '170K+ học sinh theo học' },
+  { icon: Trophy, text: 'Top 1 Livestream Toán VN' },
+  { icon: Zap, text: 'Thủ khoa ĐH 28 điểm' },
+]
+
 function TrustBar() {
-  const stats = [
-    { icon: GraduationCap, text: '8+ năm kinh nghiệm' },
-    { icon: Users, text: '170K+ học sinh theo học' },
-    { icon: Trophy, text: 'Top 1 Livestream Toán VN' },
-    { icon: Zap, text: 'Thủ khoa ĐH 28 điểm' },
-    { icon: GraduationCap, text: '8+ năm kinh nghiệm' },
-    { icon: Users, text: '170K+ học sinh theo học' },
-    { icon: Trophy, text: 'Top 1 Livestream Toán VN' },
-    { icon: Zap, text: 'Thủ khoa ĐH 28 điểm' },
-  ]
+  const doubled = useMemo(() => [...trustStats, ...trustStats, ...trustStats, ...trustStats], [])
 
   return (
     <div className="overflow-hidden bg-brand-800 py-3">
       <div className="flex marquee gap-8 whitespace-nowrap">
-        {stats.concat(stats).map((s, i) => {
+        {doubled.map((s, i) => {
           const Icon = s.icon
           return (
             <span key={i} className="inline-flex items-center gap-2 text-sm font-medium text-brand-200 shrink-0">
@@ -44,37 +43,34 @@ function TrustBar() {
 }
 
 /* ========== Quick Nav Cards ========== */
-function QuickNavStrip() {
-  const cards = [
-    {
-      title: 'Khoá học Online',
-      desc: 'Lớp 1 → 6, Toán tư duy TIMO, SASMO',
-      icon: '/Online Courses Icon.png',
-      link: '/khoa-hoc',
-      color: 'from-amber-500 to-orange-500',
-      bgLight: 'bg-amber-50',
-    },
-    {
-      title: 'Sách luyện thi',
-      desc: 'Giáo trình & sách bổ trợ chính hãng',
-      icon: '/Book Icon.png',
-      link: '/sach',
-      color: 'from-blue-500 to-indigo-500',
-      bgLight: 'bg-blue-50',
-    },
-    {
-      title: 'Thi thử',
-      desc: 'Đề thi thử sát đề thật, chấm tự động',
-      icon: '/Exam Icon.png',
-      link: '/de-thi',
-      color: 'from-emerald-500 to-teal-500',
-      bgLight: 'bg-emerald-50',
-    },
-  ]
+const quickNavCards = [
+  {
+    title: 'Khoá học Online',
+    desc: 'Lớp 1 → 6, Toán tư duy TIMO, SASMO',
+    icon: '/Online Courses Icon.png',
+    link: '/khoa-hoc',
+    bgLight: 'bg-amber-50',
+  },
+  {
+    title: 'Sách luyện thi',
+    desc: 'Giáo trình & sách bổ trợ chính hãng',
+    icon: '/Book Icon.png',
+    link: '/sach',
+    bgLight: 'bg-blue-50',
+  },
+  {
+    title: 'Thi thử',
+    desc: 'Đề thi thử sát đề thật, chấm tự động',
+    icon: '/Exam Icon.png',
+    link: '/de-thi',
+    bgLight: 'bg-emerald-50',
+  },
+]
 
+function QuickNavStrip() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
-      {cards.map((card, i) => (
+      {quickNavCards.map((card, i) => (
         <ScrollReveal key={card.title} delay={i * 100}>
           <Link to={card.link}
                 className={`group relative flex items-center gap-4 ${card.bgLight}
@@ -177,19 +173,21 @@ export default function HomePage() {
   const [sections, setSections] = useState([])
   const [honors, setHonors] = useState([])
   const [feedback, setFeedback] = useState([])
-  const [settings, setSettings] = useState({})
   const [loading, setLoading] = useState(true)
+  // Use settings from context — no double fetch
+  const settings = useSettings()
 
   useEffect(() => {
+    let cancelled = false
     async function loadData() {
       try {
-        const [sectionsData, honorsData, feedbackData, settingsData] = await Promise.all([
+        const [sectionsData, honorsData, feedbackData] = await Promise.all([
           fetchHomepageSections().catch(() => []),
           fetchFeedbacks('honor'),
           fetchFeedbacks('feedback'),
-          fetchSettings().catch(() => ({})),
         ])
-        setSettings(settingsData || {})
+
+        if (cancelled) return
 
         // Map sections from API to the format used by ProductSection component
         const builtSections = sectionsData.map(s => ({
@@ -208,10 +206,11 @@ export default function HomePage() {
       } catch (err) {
         console.error('Failed to load homepage data:', err)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     loadData()
+    return () => { cancelled = true }
   }, [])
 
   if (loading) {
