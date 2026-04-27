@@ -29,8 +29,8 @@ export default function AdminCourses() {
     try {
       const r = await fetch('/api/admin/categories', { credentials: 'include' })
       const data = await r.json()
-      // Filter only course-type categories
-      setCategories(data.filter(c => c.product_type === 'course'))
+      // Show course and combo sections (courses can belong to either)
+      setCategories(data.filter(c => c.product_type === 'course' || c.product_type === 'combo'))
     } catch (e) { console.error(e) }
   }
 
@@ -58,7 +58,6 @@ export default function AdminCourses() {
     e.preventDefault()
     if (!form.name.trim()) return setError('Tên khóa học không được để trống')
     if (form.price < 0) return setError('Giá không được âm')
-    if (!form.category) return setError('Vui lòng chọn nhóm cho khóa học')
     setSaving(true)
     setError('')
     try {
@@ -202,19 +201,19 @@ export default function AdminCourses() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nhóm trang chủ *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nhóm trang chủ</label>
                 <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                        className={`w-full h-10 px-3 rounded-lg border text-sm focus:border-brand-500 outline-none ${!form.category ? 'border-amber-300 bg-amber-50' : 'border-gray-200'}`}>
-                  <option value="">-- Chọn nhóm --</option>
+                        className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none">
+                  <option value="">-- Không thuộc nhóm nào --</option>
                   {categories.map(c => (
-                    <option key={c.category} value={c.category}>{c.title} ({c.category})</option>
+                    <option key={c.category} value={c.category}>
+                      {c.title} {c.product_type === 'combo' ? '(Combo)' : '(Khóa học)'}
+                    </option>
                   ))}
                 </select>
-                {!form.category && (
-                  <p className="text-xs text-amber-600 mt-1">⚠ Khóa học phải thuộc một nhóm để hiển thị trên trang chủ</p>
-                )}
+                <p className="text-xs text-gray-400 mt-1">Chọn nhóm để khóa học hiển thị trên trang chủ</p>
                 {categories.length === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">Chưa có nhóm nào. Hãy tạo nhóm trang chủ trước.</p>
+                  <p className="text-xs text-amber-600 mt-1">⚠ Chưa có nhóm nào. Hãy tạo nhóm trang chủ trước.</p>
                 )}
               </div>
               <ImageUpload value={form.image} onChange={v => setForm(f => ({ ...f, image: v }))} label="Ảnh thumbnail" />

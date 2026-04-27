@@ -181,9 +181,8 @@ export default function AdminSections() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Lọc theo danh mục</label>
-                  <input type="text" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                    placeholder="VD: 2k7, 2k8 (trống = tất cả)"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự</label>
+                  <input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: +e.target.value }))} min="0"
                     className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
                 </div>
               </div>
@@ -196,8 +195,9 @@ export default function AdminSections() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Thứ tự</label>
-                  <input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: +e.target.value }))} min="0"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mã danh mục (tùy chọn)</label>
+                  <input type="text" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                    placeholder="Để trống = tự tạo"
                     className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
                 </div>
               </div>
@@ -212,9 +212,8 @@ export default function AdminSections() {
                 </div>
               )}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-                <strong>Cách hoạt động:</strong> Mỗi nhóm sẽ hiển thị trên trang chủ với các sản phẩm phù hợp.
-                Nếu bạn điền "Lọc theo danh mục" (VD: 2k7), chỉ các sản phẩm có cùng danh mục mới hiển thị trong nhóm này.
-                Để trống sẽ hiển thị tất cả sản phẩm thuộc loại đã chọn.
+                <strong>Cách hoạt động:</strong> Sau khi tạo nhóm, vào trang quản lý Khóa học / Sách để gán sản phẩm vào nhóm này.
+                Sản phẩm được gán vào nhóm sẽ hiển thị trên trang chủ theo thứ tự đã sắp xếp.
               </div>
               <button type="submit" disabled={saving}
                 className="w-full h-10 rounded-xl font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors">

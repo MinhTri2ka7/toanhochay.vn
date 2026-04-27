@@ -231,22 +231,25 @@ router.get('/homepage-sections', async (req, res) => {
     // For each section, fetch the matching products
     const result = await Promise.all((sections || []).map(async (section) => {
       let items = []
-      if (section.product_type === 'combo') {
-        let q = db.supabase.from('combos').select('*').eq('status', 'active').order('sort_order')
-        if (section.category) q = q.eq('category', section.category)
-        const { data } = await q
-        items = data || []
-      } else if (section.product_type === 'course') {
-        let q = db.supabase.from('courses').select('*').eq('status', 'active').order('sort_order')
-        if (section.category) q = q.eq('category', section.category)
-        const { data } = await q
-        items = data || []
-      } else if (section.product_type === 'book') {
-        let q = db.supabase.from('books').select('*').eq('status', 'active').order('sort_order')
-        if (section.category) q = q.eq('category', section.category)
-        const { data } = await q
-        items = data || []
+      const table = section.product_type === 'combo' ? 'combos'
+                  : section.product_type === 'book' ? 'books'
+                  : 'courses'
+
+      let q = db.supabase.from(table).select('*').eq('status', 'active').order('sort_order')
+
+      // Filter by category: match either the text category OR the section_<id> key
+      const sectionKey = `section_${section.id}`
+      if (section.category && section.category.trim()) {
+        // Section has a named category — match products with that category OR section_<id>
+        q = q.or(`category.eq.${section.category},category.eq.${sectionKey}`)
+      } else {
+        // Section has no category — match products with section_<id> as category, OR empty category (legacy)
+        q = q.or(`category.eq.${sectionKey},category.eq.,category.is.null`)
       }
+
+      const { data } = await q
+      items = data || []
+
       return { ...section, items }
     }))
 

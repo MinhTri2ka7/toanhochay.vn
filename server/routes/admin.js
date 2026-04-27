@@ -668,18 +668,22 @@ router.delete('/homepage-sections/:id', async (req, res) => {
 })
 
 // ============================================
-// CATEGORIES (from homepage sections)
+// CATEGORIES (derived from homepage sections — every section is a group)
 // ============================================
 router.get('/categories', async (req, res) => {
   try {
     const { data, error } = await db.supabase
-      .from('homepage_sections').select('category, product_type, title')
+      .from('homepage_sections').select('id, title, product_type, category')
       .order('sort_order')
     if (error) throw error
-    // Return distinct categories with their product_type
-    const categories = (data || [])
-      .filter(s => s.category && s.category.trim())
-      .map(s => ({ category: s.category, product_type: s.product_type, title: s.title }))
+    // Every section becomes a selectable category.
+    // Use section.category if set, otherwise use "section_<id>" as the category key.
+    const categories = (data || []).map(s => ({
+      category: s.category && s.category.trim() ? s.category : `section_${s.id}`,
+      product_type: s.product_type,
+      title: s.title,
+      section_id: s.id,
+    }))
     res.json(categories)
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server' })

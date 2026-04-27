@@ -31,7 +31,6 @@ export default function AdminBooks() {
     try {
       const r = await fetch('/api/admin/categories', { credentials: 'include' })
       const data = await r.json()
-      // Filter only book-type categories
       setCategories(data.filter(c => c.product_type === 'book'))
     } catch (e) { console.error(e) }
   }
@@ -208,12 +207,12 @@ export default function AdminBooks() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nhóm trang chủ</label>
                 <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                         className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none">
-                  <option value="">-- Không chọn (hiển thị ở tất cả nhóm sách) --</option>
+                  <option value="">-- Không thuộc nhóm nào --</option>
                   {categories.map(c => (
-                    <option key={c.category} value={c.category}>{c.title} ({c.category})</option>
+                    <option key={c.category} value={c.category}>{c.title}</option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-400 mt-1">Để trống sẽ hiển thị ở tất cả các nhóm sách trên trang chủ</p>
+                <p className="text-xs text-gray-400 mt-1">Chọn nhóm để sách hiển thị trên trang chủ</p>
               </div>
               <ImageUpload value={form.image} onChange={v => setForm(f => ({ ...f, image: v }))} label="Ảnh bìa" />
               <div>
