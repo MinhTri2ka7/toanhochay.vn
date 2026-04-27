@@ -287,4 +287,147 @@ router.get('/homepage-sections', async (req, res) => {
   }
 })
 
+// ============================================
+// LEARNING: My Courses, Lessons, Progress
+// ============================================
+import { authenticateToken } from '../middleware/auth.js'
+
+// GET /api/my-courses — list user's purchased courses
+router.get('/my-courses', authenticateToken, async (req, res) => {
+  try {
+    const { data, error } = await db.supabase
+      .from('user_courses').select('course_id, activated_at')
+      .eq('user_id', req.user.id)
+    if (error) throw error
+    if (!data?.length) return res.json([])
+
+    const courseIds = data.map(uc => uc.course_id)
+    const { data: courses } = await db.supabase
+      .from('courses').select('id, slug, name, image, type')
+      .in('id', courseIds)
+      .eq('status', 'active')
+
+    // Get lesson counts per course
+    const { data: lessonCounts } = await db.supabase
+      .from('lessons').select('course_id')
+      .in('course_id', courseIds)
+      .eq('status', 'active')
+
+    // Get progress counts
+    const { data: progressData } = await db.supabase
+      .from('lesson_progress').select('lesson_id')
+      .eq('user_id', req.user.id)
+      .eq('completed', true)
+
+    const progressLessonIds = new Set((progressData || []).map(p => p.lesson_id))
+
+    res.json((courses || []).map(c => {
+      const totalLessons = (lessonCounts || []).filter(l => l.course_id === c.id).length
+      return { ...c, totalLessons, activatedAt: data.find(uc => uc.course_id === c.id)?.activated_at }
+    }))
+  } catch (err) {
+    console.error('My courses error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// GET /api/learn/:slug — get course + lessons for learning (requires enrollment)
+router.get('/learn/:slug', authenticateToken, async (req, res) => {
+  try {
+    const course = await db.selectOne('courses', { slug: req.params.slug, status: 'active' })
+    if (!course) return res.status(404).json({ error: 'Không tìm thấy khóa học' })
+
+    // Check enrollment
+    const { data: enrollment } = await db.supabase
+      .from('user_courses').select('id')
+      .eq('user_id', req.user.id)
+      .eq('course_id', course.id)
+      .maybeSingle()
+
+    if (!enrollment) {
+      return res.status(403).json({ error: 'Bạn chưa mua khóa học này', enrolled: false })
+    }
+
+    // Get lessons (active only, hide video_url for security — only send via lesson detail)
+    const { data: lessons } = await db.supabase
+      .from('lessons').select('id, title, description, sort_order, is_preview, status, duration')
+      .eq('course_id', course.id)
+      .eq('status', 'active')
+      .order('sort_order')
+
+    // Get user progress
+    const lessonIds = (lessons || []).map(l => l.id)
+    let progress = []
+    if (lessonIds.length > 0) {
+      const { data: prog } = await db.supabase
+        .from('lesson_progress').select('lesson_id, completed, last_position')
+        .eq('user_id', req.user.id)
+        .in('lesson_id', lessonIds)
+      progress = prog || []
+    }
+
+    res.json({
+      course: { id: course.id, slug: course.slug, name: course.name, image: course.image },
+      lessons: (lessons || []).map(l => ({
+        ...l,
+        completed: progress.find(p => p.lesson_id === l.id)?.completed || false,
+        lastPosition: progress.find(p => p.lesson_id === l.id)?.last_position || 0,
+      })),
+    })
+  } catch (err) {
+    console.error('Learn error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// GET /api/lessons/:id — get single lesson content + video (requires enrollment)
+router.get('/lessons/:id', authenticateToken, async (req, res) => {
+  try {
+    const { data: lesson, error } = await db.supabase
+      .from('lessons').select('*')
+      .eq('id', parseInt(req.params.id))
+      .eq('status', 'active')
+      .maybeSingle()
+    if (error) throw error
+    if (!lesson) return res.status(404).json({ error: 'Không tìm thấy bài học' })
+
+    // Check enrollment
+    const { data: enrollment } = await db.supabase
+      .from('user_courses').select('id')
+      .eq('user_id', req.user.id)
+      .eq('course_id', lesson.course_id)
+      .maybeSingle()
+
+    if (!enrollment) {
+      return res.status(403).json({ error: 'Bạn chưa mua khóa học này' })
+    }
+
+    res.json(lesson)
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// POST /api/lessons/:id/progress — update progress
+router.post('/lessons/:id/progress', authenticateToken, async (req, res) => {
+  try {
+    const lessonId = parseInt(req.params.id)
+    const { completed, lastPosition } = req.body
+
+    await db.upsert('lesson_progress', {
+      user_id: req.user.id,
+      lesson_id: lessonId,
+      completed: completed || false,
+      completed_at: completed ? new Date().toISOString() : null,
+      last_position: lastPosition || 0,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id, lesson_id' })
+
+    res.json({ success: true })
+  } catch (err) {
+    console.error('Progress error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 export default router

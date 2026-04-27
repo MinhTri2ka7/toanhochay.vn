@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Trash2, GripVertical, Eye, EyeOff, Play, FileText, ChevronUp, ChevronDown } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 const emptyForm = { name: '', slug: '', description: '', price: 0, old_price: 0, image: '', type: 'live', status: 'active', category: '' }
+const emptyLesson = { title: '', description: '', video_url: '', is_preview: false, status: 'active', duration: 0 }
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState([])
@@ -12,6 +13,14 @@ export default function AdminCourses() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  // Lessons state
+  const [lessonCourse, setLessonCourse] = useState(null)
+  const [lessons, setLessons] = useState([])
+  const [lessonForm, setLessonForm] = useState(emptyLesson)
+  const [showLessonModal, setShowLessonModal] = useState(false)
+  const [editingLesson, setEditingLesson] = useState(null)
+  const [loadingLessons, setLoadingLessons] = useState(false)
+  const [savingLesson, setSavingLesson] = useState(false)
   const [categories, setCategories] = useState([])
 
   useEffect(() => { loadCourses(); loadCategories() }, [])
@@ -138,6 +147,7 @@ export default function AdminCourses() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex gap-1 justify-center">
+                      <button onClick={() => openLessons(c)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 flex items-center gap-1"><Play size={10} /> Bài học</button>
                       <button onClick={() => openEdit(c)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200">Sửa</button>
                       <button onClick={() => deleteCourse(c.id)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-red-100 text-red-600 hover:bg-red-200">Xóa</button>
                     </div>
@@ -232,6 +242,181 @@ export default function AdminCourses() {
           </div>
         </div>
       )}
+
+      {/* LESSONS OVERLAY */}
+      {lessonCourse && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setLessonCourse(null)} />
+          <div className="relative ml-auto w-full max-w-lg bg-white shadow-2xl flex flex-col h-full"
+               style={{ animation: 'slideDrawerIn 0.25s ease-out' }}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Quản lý bài học</h2>
+                <p className="text-sm text-gray-500 line-clamp-1">{lessonCourse.name}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setLessonForm(emptyLesson); setEditingLesson(null); setShowLessonModal(true) }}
+                        className="flex items-center gap-1 h-8 px-3 rounded-lg text-xs font-semibold bg-brand-600 text-white hover:bg-brand-700">
+                  <Plus size={12} /> Thêm bài học
+                </button>
+                <button onClick={() => setLessonCourse(null)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100">
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-2">
+              {loadingLessons ? (
+                <div className="text-center py-12"><div className="w-6 h-6 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+              ) : lessons.length === 0 ? (
+                <div className="text-center py-16">
+                  <FileText size={40} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-400">Chưa có bài học nào</p>
+                  <button onClick={() => { setLessonForm(emptyLesson); setEditingLesson(null); setShowLessonModal(true) }}
+                          className="mt-3 text-sm text-brand-600 font-semibold hover:underline">
+                    + Thêm bài học đầu tiên
+                  </button>
+                </div>
+              ) : lessons.map((l, idx) => (
+                <div key={l.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-xs font-bold text-gray-400">{idx + 1}.</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${l.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {l.status === 'active' ? 'Hiện' : 'Ẩn'}
+                        </span>
+                        {l.is_preview && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">Preview</span>}
+                        {l.video_url && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-600">▶ Video</span>}
+                      </div>
+                      <p className="text-sm font-medium text-gray-800">{l.title}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {idx > 0 && <button onClick={() => moveLesson(idx, idx - 1)} className="p-1 text-gray-400 hover:text-gray-600"><ChevronUp size={14} /></button>}
+                      {idx < lessons.length - 1 && <button onClick={() => moveLesson(idx, idx + 1)} className="p-1 text-gray-400 hover:text-gray-600"><ChevronDown size={14} /></button>}
+                      <button onClick={() => openEditLesson(l)} className="px-2 py-1 rounded text-xs font-semibold text-blue-600 hover:bg-blue-50">Sửa</button>
+                      <button onClick={() => deleteLesson(l.id)} className="p-1 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LESSON CREATE/EDIT MODAL */}
+      {showLessonModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowLessonModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{editingLesson ? 'Sửa bài học' : 'Thêm bài học mới'}</h3>
+            <form onSubmit={saveLesson} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề bài học *</label>
+                <input value={lessonForm.title} onChange={e => setLessonForm(f => ({ ...f, title: e.target.value }))} required
+                       className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">YouTube Video URL</label>
+                <input value={lessonForm.video_url} onChange={e => setLessonForm(f => ({ ...f, video_url: e.target.value }))}
+                       placeholder="https://www.youtube.com/watch?v=..."
+                       className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+                <p className="text-xs text-gray-400 mt-1">Hỗ trợ: youtube.com/watch?v=..., youtu.be/..., embed URL</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả / Nội dung</label>
+                <textarea value={lessonForm.description} onChange={e => setLessonForm(f => ({ ...f, description: e.target.value }))} rows={3}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none resize-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thời lượng (phút)</label>
+                  <input type="number" value={Math.round(lessonForm.duration / 60)} onChange={e => setLessonForm(f => ({ ...f, duration: (+e.target.value) * 60 }))} min="0"
+                         className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                  <select value={lessonForm.status} onChange={e => setLessonForm(f => ({ ...f, status: e.target.value }))}
+                          className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm">
+                    <option value="active">Hiện</option>
+                    <option value="hidden">Ẩn</option>
+                  </select>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={lessonForm.is_preview} onChange={e => setLessonForm(f => ({ ...f, is_preview: e.target.checked }))} className="rounded" />
+                <span className="text-sm text-gray-700">Cho xem thử (không cần mua)</span>
+              </label>
+              <button type="submit" disabled={savingLesson}
+                      className="w-full h-10 rounded-xl font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors">
+                {savingLesson ? 'Đang lưu...' : (editingLesson ? 'Cập nhật' : 'Thêm bài học')}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
+
+  // ============================================
+  // LESSON FUNCTIONS
+  // ============================================
+  async function openLessons(course) {
+    setLessonCourse(course)
+    setLoadingLessons(true)
+    try {
+      const r = await fetch(`/api/admin/courses/${course.id}/lessons`, { credentials: 'include' })
+      setLessons(await r.json())
+    } catch (e) { console.error(e) }
+    finally { setLoadingLessons(false) }
+  }
+
+  function openEditLesson(l) {
+    setEditingLesson(l)
+    setLessonForm({ title: l.title, description: l.description || '', video_url: l.video_url || '', is_preview: l.is_preview || false, status: l.status || 'active', duration: l.duration || 0 })
+    setShowLessonModal(true)
+  }
+
+  async function saveLesson(e) {
+    e.preventDefault()
+    if (!lessonForm.title.trim()) return
+    setSavingLesson(true)
+    try {
+      if (editingLesson) {
+        await fetch(`/api/admin/lessons/${editingLesson.id}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lessonForm) })
+      } else {
+        await fetch(`/api/admin/courses/${lessonCourse.id}/lessons`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lessonForm) })
+      }
+      setShowLessonModal(false)
+      setEditingLesson(null)
+      setLessonForm(emptyLesson)
+      // Reload lessons
+      const r = await fetch(`/api/admin/courses/${lessonCourse.id}/lessons`, { credentials: 'include' })
+      setLessons(await r.json())
+    } catch (e) { console.error(e) }
+    finally { setSavingLesson(false) }
+  }
+
+  async function deleteLesson(id) {
+    if (!confirm('Xóa bài học này?')) return
+    try {
+      await fetch(`/api/admin/lessons/${id}`, { method: 'DELETE', credentials: 'include' })
+      setLessons(prev => prev.filter(l => l.id !== id))
+    } catch (e) { console.error(e) }
+  }
+
+  async function moveLesson(fromIdx, toIdx) {
+    const newLessons = [...lessons]
+    const [moved] = newLessons.splice(fromIdx, 1)
+    newLessons.splice(toIdx, 0, moved)
+    setLessons(newLessons)
+    try {
+      await fetch(`/api/admin/courses/${lessonCourse.id}/lessons/reorder`, {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: newLessons.map(l => l.id) }),
+      })
+    } catch (e) { console.error(e) }
+  }
 }

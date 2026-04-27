@@ -24,6 +24,7 @@ const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
 const ActivatePage = lazy(() => import('./pages/ActivatePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const LearnPage = lazy(() => import('./pages/LearnPage'))
 
 // Admin pages — heavy, only loaded for admin users
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -121,9 +122,11 @@ function App() {
               {/* Legacy auth routes */}
               <Route path="/auth/login" element={<Navigate to="/login" replace />} />
               <Route path="/auth/signup" element={<Navigate to="/register" replace />} />
-              {/* Checkout has its own auth gate UI with cart preview */}
               <Route path="/checkout" element={<CheckoutPage />} />
             </Route>
+
+            {/* Learn page — full-screen layout, no header/footer */}
+            <Route path="/hoc/:slug" element={<ProtectedRoute><LearnPage /></ProtectedRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>

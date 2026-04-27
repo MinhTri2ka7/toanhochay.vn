@@ -753,4 +753,86 @@ router.delete('/combos/:id', async (req, res) => {
   }
 })
 
+// ============================================
+// LESSONS MANAGEMENT
+// ============================================
+
+// GET /api/admin/courses/:courseId/lessons
+router.get('/courses/:courseId/lessons', async (req, res) => {
+  try {
+    const { data, error } = await db.supabase
+      .from('lessons').select('*')
+      .eq('course_id', req.params.courseId)
+      .order('sort_order')
+    if (error) throw error
+    res.json(data || [])
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// POST /api/admin/courses/:courseId/lessons
+router.post('/courses/:courseId/lessons', async (req, res) => {
+  try {
+    const { title, description, video_url, is_preview, status, duration } = req.body
+    if (!title?.trim()) return res.status(400).json({ error: 'Tiêu đề bài học không được để trống' })
+    const count = await db.count('lessons', { course_id: req.params.courseId })
+    await db.insert('lessons', {
+      course_id: req.params.courseId,
+      title: title.trim(),
+      description: description || '',
+      video_url: video_url || '',
+      is_preview: is_preview || false,
+      status: status || 'active',
+      duration: duration || 0,
+      sort_order: count + 1,
+    })
+    res.status(201).json({ message: 'Thêm bài học thành công' })
+  } catch (err) {
+    console.error('Create lesson error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// PUT /api/admin/lessons/:id
+router.put('/lessons/:id', async (req, res) => {
+  try {
+    const { title, description, video_url, is_preview, status, duration } = req.body
+    await db.update('lessons', {
+      title, description, video_url,
+      is_preview: is_preview ?? false,
+      status: status || 'active',
+      duration: duration || 0,
+      updated_at: new Date().toISOString(),
+    }, { id: parseInt(req.params.id) })
+    res.json({ message: 'Cập nhật thành công' })
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// DELETE /api/admin/lessons/:id
+router.delete('/lessons/:id', async (req, res) => {
+  try {
+    await db.remove('lessons', { id: parseInt(req.params.id) })
+    res.json({ message: 'Đã xóa' })
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// PUT /api/admin/courses/:courseId/lessons/reorder — drag & drop sort
+router.put('/courses/:courseId/lessons/reorder', async (req, res) => {
+  try {
+    const { order } = req.body // array of lesson IDs in new order
+    if (!Array.isArray(order)) return res.status(400).json({ error: 'Invalid order' })
+    for (let i = 0; i < order.length; i++) {
+      await db.update('lessons', { sort_order: i + 1 }, { id: order[i] })
+    }
+    res.json({ message: 'Đã sắp xếp lại' })
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 export default router
