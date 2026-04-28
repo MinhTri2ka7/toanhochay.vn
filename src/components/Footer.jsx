@@ -136,12 +136,7 @@ export default function Footer() {
         <div className="border-t border-brand-800/60 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-brand-500">
           <p className="flex items-center gap-1">
             Made with <Heart size={12} className="text-red-400" /> by{' '}
-            <a href="https://www.facebook.com/chysnh" target="_blank" rel="noopener noreferrer"
-               className="text-brand-400 hover:text-white transition-colors underline decoration-dotted">
-              entiq
-            </a>
-            {' '}&{' '}
-            <span className="text-brand-400 underline">ndc</span>
+            <span className="text-brand-400">ai4dev</span>
           </p>
           <button onClick={scrollToTop}
                   className="inline-flex items-center gap-1.5 text-brand-500
