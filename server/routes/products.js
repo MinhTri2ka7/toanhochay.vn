@@ -211,13 +211,110 @@ router.post('/exams/:id/submit', async (req, res) => {
       })
     }
 
+    // Fetch leaderboard (top 20)
+    let leaderboard = []
+    try {
+      const { data: lbData } = await db.supabase
+        .from('test_results')
+        .select('user_id, score, correct_count, total_questions, time_spent, completed_at')
+        .eq('test_id', testId)
+        .order('score', { ascending: false })
+        .order('time_spent', { ascending: true })
+        .limit(50)
+
+      // Group by user — keep best score per user
+      const userBest = {}
+      for (const r of (lbData || [])) {
+        if (!userBest[r.user_id] || r.score > userBest[r.user_id].score ||
+            (r.score === userBest[r.user_id].score && r.time_spent < userBest[r.user_id].time_spent)) {
+          userBest[r.user_id] = r
+        }
+      }
+
+      const sortedEntries = Object.values(userBest)
+        .sort((a, b) => b.score - a.score || a.time_spent - b.time_spent)
+        .slice(0, 20)
+
+      // Fetch user names
+      const userIds = sortedEntries.map(e => e.user_id).filter(Boolean)
+      let userMap = {}
+      if (userIds.length > 0) {
+        const { data: users } = await db.supabase
+          .from('users').select('id, name')
+          .in('id', userIds)
+        for (const u of (users || [])) userMap[u.id] = u.name
+      }
+
+      leaderboard = sortedEntries.map((e, i) => ({
+        rank: i + 1,
+        name: userMap[e.user_id] || 'Ẩn danh',
+        score: e.score,
+        correctCount: e.correct_count,
+        totalQuestions: e.total_questions,
+        timeSpent: e.time_spent,
+        isMe: e.user_id === userId,
+      }))
+    } catch (lbErr) {
+      console.error('Leaderboard error:', lbErr)
+    }
+
     res.json({
       score, maxScore, correctCount, wrongCount, unansweredCount,
       totalQuestions: questions.length,
+      timeSpent: timeSpent || 0,
       results: resultsArr,
+      leaderboard,
     })
   } catch (err) {
     console.error('Submit error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// GET /api/exams/:id/leaderboard
+router.get('/exams/:id/leaderboard', async (req, res) => {
+  try {
+    const testId = parseInt(req.params.id)
+    const { data: lbData } = await db.supabase
+      .from('test_results')
+      .select('user_id, score, correct_count, total_questions, time_spent, completed_at')
+      .eq('test_id', testId)
+      .order('score', { ascending: false })
+      .order('time_spent', { ascending: true })
+      .limit(50)
+
+    const userBest = {}
+    for (const r of (lbData || [])) {
+      if (!userBest[r.user_id] || r.score > userBest[r.user_id].score ||
+          (r.score === userBest[r.user_id].score && r.time_spent < userBest[r.user_id].time_spent)) {
+        userBest[r.user_id] = r
+      }
+    }
+
+    const sortedEntries = Object.values(userBest)
+      .sort((a, b) => b.score - a.score || a.time_spent - b.time_spent)
+      .slice(0, 20)
+
+    const userIds = sortedEntries.map(e => e.user_id).filter(Boolean)
+    let userMap = {}
+    if (userIds.length > 0) {
+      const { data: users } = await db.supabase
+        .from('users').select('id, name')
+        .in('id', userIds)
+      for (const u of (users || [])) userMap[u.id] = u.name
+    }
+
+    const userId = req.user?.id || null
+    res.json(sortedEntries.map((e, i) => ({
+      rank: i + 1,
+      name: userMap[e.user_id] || 'Ẩn danh',
+      score: e.score,
+      correctCount: e.correct_count,
+      totalQuestions: e.total_questions,
+      timeSpent: e.time_spent,
+      isMe: e.user_id === userId,
+    })))
+  } catch (err) {
     res.status(500).json({ error: 'Lỗi server' })
   }
 })

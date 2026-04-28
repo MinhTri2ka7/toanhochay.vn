@@ -171,96 +171,185 @@ export default function ExamTakingPage() {
     )
   }
 
-  // Results view
+  // Results view with score + leaderboard
   if (submitted && results) {
+    const pct = results.maxScore > 0 ? Math.round((results.score / results.maxScore) * 100) : 0
+    const circumference = 2 * Math.PI * 54 // radius = 54
+    const dashOffset = circumference - (pct / 100) * circumference
+    const scoreColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444'
+    const timeStr = results.timeSpent ? `${Math.floor(results.timeSpent / 60)}p ${results.timeSpent % 60}s` : ''
+
     return (
-      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%] max-w-3xl mx-auto">
-        <ScrollReveal>
-          <div className="bg-white rounded-3xl shadow-section p-8 text-center mb-6">
-            <h1 className="text-2xl font-bold text-brand-900 mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
-              Kết quả bài thi
-            </h1>
-            <p className="text-gray-500 mb-6">{exam.title}</p>
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <div className="bg-brand-50 rounded-2xl p-4">
-                <p className="text-3xl font-bold text-brand-700">{results.score}</p>
-                <p className="text-xs text-gray-500">Điểm / {results.maxScore}</p>
-              </div>
-              <div className="bg-emerald-50 rounded-2xl p-4">
-                <p className="text-3xl font-bold text-emerald-600">{results.correctCount}</p>
-                <p className="text-xs text-gray-500">Đúng</p>
-              </div>
-              <div className="bg-red-50 rounded-2xl p-4">
-                <p className="text-3xl font-bold text-red-500">{results.wrongCount}</p>
-                <p className="text-xs text-gray-500">Sai</p>
-              </div>
-              <div className="bg-gray-50 rounded-2xl p-4">
-                <p className="text-3xl font-bold text-gray-400">{results.unansweredCount}</p>
-                <p className="text-xs text-gray-500">Bỏ qua</p>
-              </div>
-            </div>
+          {/* LEFT — Score + Stats (2 cols) */}
+          <div className="lg:col-span-2 space-y-6">
+            <ScrollReveal>
+              <div className="bg-white rounded-3xl shadow-section p-8">
+                <h1 className="text-xl font-bold text-brand-900 text-center mb-1" style={{ fontFamily: 'var(--font-heading)' }}>
+                  Kết quả bài thi
+                </h1>
+                <p className="text-gray-400 text-center text-sm mb-8">{exam.title}</p>
 
-            <button onClick={() => navigate('/de-thi')}
-                    className="inline-flex items-center gap-2 h-10 px-6 rounded-xl font-semibold
-                               bg-brand-600 text-white
-                               transition-all">
-              <ArrowLeft size={16} /> Danh sách đề thi
-            </button>
-          </div>
-        </ScrollReveal>
-
-        {/* Question review */}
-        <div className="space-y-4">
-          {exam.questions?.map((q, idx) => {
-            const result = results.results?.find(r => r.questionId === q.id)
-            const isCorrect = result?.isCorrect
-            const isUnanswered = result?.isUnanswered
-            return (
-              <div key={q.id} className={`bg-white rounded-2xl shadow-card p-5 border-l-4
-                                          ${isCorrect ? 'border-emerald-500' : isUnanswered ? 'border-gray-300' : 'border-red-400'}`}>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <p className="font-semibold text-sm">
-                    <span className="text-gray-400 mr-2">Câu {idx + 1}.</span>
-                    {q.question_text}
-                  </p>
-                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-bold
-                    ${isCorrect ? 'bg-emerald-100 text-emerald-700' : isUnanswered ? 'bg-gray-100 text-gray-400' : 'bg-red-100 text-red-600'}`}>
-                    {result?.pointsEarned > 0 ? `+${result.pointsEarned}` : result?.pointsEarned ?? 0}
-                  </span>
+                {/* Score circle */}
+                <div className="flex justify-center mb-8">
+                  <div className="relative w-40 h-40">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                      <circle cx="60" cy="60" r="54" fill="none" stroke="#f3f4f6" strokeWidth="8" />
+                      <circle cx="60" cy="60" r="54" fill="none" stroke={scoreColor} strokeWidth="8"
+                              strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset}
+                              style={{ transition: 'stroke-dashoffset 1.5s ease-out' }} />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-4xl font-black" style={{ color: scoreColor }}>{results.score}</span>
+                      <span className="text-xs text-gray-400">/ {results.maxScore} điểm</span>
+                    </div>
+                  </div>
                 </div>
-                {q.image && <img src={q.image} alt="" className="max-h-48 rounded-lg border border-gray-200 mb-3 object-contain" />}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                  {['A', 'B', 'C', 'D'].map(opt => {
-                    const optText = q[`option_${opt.toLowerCase()}`]
-                    const optImg = q[`option_${opt.toLowerCase()}_image`]
-                    if (!optText && !optImg) return null
-                    const isUserAnswer = result?.userAnswer === opt
-                    const isCorrectAnswer = result?.correctAnswer === opt
-                    let cls = 'border-gray-200 bg-gray-50'
-                    if (isCorrectAnswer) cls = 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                    else if (isUserAnswer && !isCorrect) cls = 'border-red-400 bg-red-50 text-red-600'
-                    return (
-                      <div key={opt} className={`px-3 py-2 rounded-lg border ${cls} flex flex-col gap-1`}>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold w-5">{opt}.</span>
-                          <span className="flex-1">{optText}</span>
-                          {isCorrectAnswer && <CheckCircle size={14} className="ml-auto text-emerald-500 shrink-0" />}
-                          {isUserAnswer && !isCorrect && <XCircle size={14} className="ml-auto text-red-400 shrink-0" />}
-                        </div>
-                        {optImg && <img src={optImg} alt="" className="max-h-24 rounded object-contain" />}
-                      </div>
-                    )
-                  })}
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                  <div className="bg-brand-50 rounded-2xl p-4 text-center">
+                    <p className="text-2xl font-bold text-brand-700">{pct}%</p>
+                    <p className="text-xs text-gray-500">Tỷ lệ</p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-2xl p-4 text-center">
+                    <p className="text-2xl font-bold text-emerald-600">{results.correctCount}</p>
+                    <p className="text-xs text-gray-500">Đúng</p>
+                  </div>
+                  <div className="bg-red-50 rounded-2xl p-4 text-center">
+                    <p className="text-2xl font-bold text-red-500">{results.wrongCount}</p>
+                    <p className="text-xs text-gray-500">Sai</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-2xl p-4 text-center">
+                    <p className="text-2xl font-bold text-gray-400">{results.unansweredCount}</p>
+                    <p className="text-xs text-gray-500">Bỏ qua</p>
+                  </div>
                 </div>
-                {result?.explanation && (
-                  <p className="mt-3 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
-                    💡 {result.explanation}
+
+                {timeStr && (
+                  <p className="text-center text-sm text-gray-400 mb-4">
+                    <Clock size={14} className="inline mr-1" /> Thời gian: <strong>{timeStr}</strong>
                   </p>
                 )}
+
+                <div className="flex justify-center gap-3">
+                  <button onClick={() => navigate('/de-thi')}
+                          className="inline-flex items-center gap-2 h-10 px-5 rounded-xl font-semibold
+                                     bg-brand-600 text-white transition-all text-sm">
+                    <ArrowLeft size={16} /> Danh sách đề
+                  </button>
+                  <button onClick={() => { setSubmitted(false); setResults(null); setAnswers({}); setTimeLeft(exam.duration * 60) }}
+                          className="inline-flex items-center gap-2 h-10 px-5 rounded-xl font-semibold
+                                     border border-brand-300 text-brand-700 transition-all text-sm hover:bg-brand-50">
+                    Thi lại
+                  </button>
+                </div>
               </div>
-            )
-          })}
+            </ScrollReveal>
+
+            {/* Question review */}
+            <div className="space-y-4">
+              {exam.questions?.map((q, idx) => {
+                const result = results.results?.find(r => r.questionId === q.id)
+                const isCorrect = result?.isCorrect
+                const isUnanswered = result?.isUnanswered
+                return (
+                  <div key={q.id} className={`bg-white rounded-2xl shadow-card p-5 border-l-4
+                                              ${isCorrect ? 'border-emerald-500' : isUnanswered ? 'border-gray-300' : 'border-red-400'}`}>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <p className="font-semibold text-sm">
+                        <span className="text-gray-400 mr-2">Câu {idx + 1}.</span>
+                        {q.question_text}
+                      </p>
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-bold
+                        ${isCorrect ? 'bg-emerald-100 text-emerald-700' : isUnanswered ? 'bg-gray-100 text-gray-400' : 'bg-red-100 text-red-600'}`}>
+                        {result?.pointsEarned > 0 ? `+${result.pointsEarned}` : result?.pointsEarned ?? 0}
+                      </span>
+                    </div>
+                    {q.image && <img src={q.image} alt="" className="max-h-48 rounded-lg border border-gray-200 mb-3 object-contain" />}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      {['A', 'B', 'C', 'D'].map(opt => {
+                        const optText = q[`option_${opt.toLowerCase()}`]
+                        const optImg = q[`option_${opt.toLowerCase()}_image`]
+                        if (!optText && !optImg) return null
+                        const isUserAnswer = result?.userAnswer === opt
+                        const isCorrectAnswer = result?.correctAnswer === opt
+                        let cls = 'border-gray-200 bg-gray-50'
+                        if (isCorrectAnswer) cls = 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                        else if (isUserAnswer && !isCorrect) cls = 'border-red-400 bg-red-50 text-red-600'
+                        return (
+                          <div key={opt} className={`px-3 py-2 rounded-lg border ${cls} flex flex-col gap-1`}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold w-5">{opt}.</span>
+                              <span className="flex-1">{optText}</span>
+                              {isCorrectAnswer && <CheckCircle size={14} className="ml-auto text-emerald-500 shrink-0" />}
+                              {isUserAnswer && !isCorrect && <XCircle size={14} className="ml-auto text-red-400 shrink-0" />}
+                            </div>
+                            {optImg && <img src={optImg} alt="" className="max-h-24 rounded object-contain" />}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {result?.explanation && (
+                      <p className="mt-3 text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
+                        💡 {result.explanation}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* RIGHT — Leaderboard (1 col) */}
+          <div className="lg:col-span-1">
+            <ScrollReveal delay={200}>
+              <div className="bg-white rounded-3xl shadow-section p-5 sticky top-20">
+                <h2 className="text-base font-bold text-brand-900 mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)' }}>
+                  🏆 Bảng xếp hạng
+                </h2>
+
+                {results.leaderboard?.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {results.leaderboard.map((entry) => {
+                      const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : null
+                      return (
+                        <div key={entry.rank}
+                             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all
+                               ${entry.isMe ? 'bg-amber-50 border border-amber-200 ring-1 ring-amber-300' : 'hover:bg-gray-50'}`}>
+                          {/* Rank */}
+                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
+                            ${entry.rank <= 3 ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {medal || entry.rank}
+                          </span>
+                          {/* Name */}
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-semibold text-sm truncate ${entry.isMe ? 'text-amber-800' : 'text-gray-800'}`}>
+                              {entry.name} {entry.isMe && <span className="text-[10px] text-amber-500">(Bạn)</span>}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {entry.correctCount}/{entry.totalQuestions} đúng
+                              {entry.timeSpent > 0 && ` • ${Math.floor(entry.timeSpent / 60)}p${entry.timeSpent % 60}s`}
+                            </p>
+                          </div>
+                          {/* Score */}
+                          <span className={`font-bold text-sm shrink-0 ${entry.rank <= 3 ? 'text-brand-700' : 'text-gray-600'}`}>
+                            {entry.score}đ
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 text-sm">
+                    <p>Chưa có dữ liệu xếp hạng</p>
+                  </div>
+                )}
+              </div>
+            </ScrollReveal>
+          </div>
         </div>
       </div>
     )
