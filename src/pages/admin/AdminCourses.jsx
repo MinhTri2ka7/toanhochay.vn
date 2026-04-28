@@ -87,8 +87,17 @@ export default function AdminCourses() {
 
   async function deleteCourse(id) {
     if (!confirm('Bạn có chắc chắn muốn xóa khóa học này? Hành động này không thể hoàn tác.')) return
-    await fetch(`/api/admin/courses/${id}`, { method: 'DELETE', credentials: 'include' })
-    setCourses(prev => prev.filter(c => c.id !== id))
+    try {
+      const r = await fetch(`/api/admin/courses/${id}`, { method: 'DELETE', credentials: 'include' })
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}))
+        throw new Error(d.error || 'Lỗi xóa khóa học')
+      }
+      setCourses(prev => prev.filter(c => c.id !== id))
+    } catch (err) {
+      console.error(err)
+      alert(err.message || 'Có lỗi xảy ra khi xóa khóa học')
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" /></div>

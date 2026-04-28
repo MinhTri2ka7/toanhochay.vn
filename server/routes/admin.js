@@ -195,10 +195,14 @@ router.put('/courses/:id', async (req, res) => {
 
 router.delete('/courses/:id', async (req, res) => {
   try {
+    // Clean up user_courses (no FK cascade)
+    await db.remove('user_courses', { course_id: req.params.id })
+    // Delete course (lessons cascade automatically via FK)
     await db.remove('courses', { id: req.params.id })
     res.json({ message: 'Đã xóa' })
   } catch (err) {
-    res.status(500).json({ error: 'Lỗi server' })
+    console.error('Delete course error:', err)
+    res.status(500).json({ error: err.message || 'Lỗi server' })
   }
 })
 

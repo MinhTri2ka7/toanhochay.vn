@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plus, X, GripVertical, Eye, EyeOff, BookCopy, LibraryBig, BookText } from 'lucide-react'
+import { Plus, X, GripVertical, Eye, EyeOff, BookCopy, LibraryBig, BookText, BookOpen } from 'lucide-react'
 
 const iconOptions = [
   { value: 'LibraryBig', label: 'Khóa học', Icon: LibraryBig },
+  { value: 'BookOpen', label: 'Luyện thi', Icon: BookOpen },
   { value: 'BookCopy', label: 'Combo', Icon: BookCopy },
   { value: 'BookText', label: 'Sách', Icon: BookText },
 ]

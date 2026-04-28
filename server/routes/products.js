@@ -256,27 +256,25 @@ router.get('/homepage-sections', async (req, res) => {
 
     // For each section, fetch the matching products
     const result = await Promise.all((sections || []).map(async (section) => {
-      let items = []
       const table = section.product_type === 'combo' ? 'combos'
                   : section.product_type === 'book' ? 'books'
                   : 'courses'
 
       let q = db.supabase.from(table).select('*').eq('status', 'active').order('sort_order')
 
-      // Filter by category: match either the text category OR the section_<id> key
+      // Build category filter: match named category AND/OR section_<id> key
       const sectionKey = `section_${section.id}`
       if (section.category && section.category.trim()) {
-        // Section has a named category — match products with that category OR section_<id>
+        // Section has a named category — match products with that exact category OR section_<id>
         q = q.or(`category.eq.${section.category},category.eq.${sectionKey}`)
       } else {
-        // Section has no category — match products with section_<id> as category, OR empty category (legacy)
-        q = q.or(`category.eq.${sectionKey},category.eq.,category.is.null`)
+        // Section has no named category — only match products explicitly assigned via section_<id>
+        q = q.eq('category', sectionKey)
       }
 
       const { data } = await q
-      items = data || []
 
-      return { ...section, items }
+      return { ...section, items: data || [] }
     }))
 
     // Filter out empty sections
