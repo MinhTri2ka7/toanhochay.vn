@@ -131,6 +131,21 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), database: 'supabase', runtime: 'vercel-serverless' })
 })
 
+// File upload for documents (admin only)
+const fileUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } })
+app.post('/api/upload-file', authenticateToken, requireAdmin, fileUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Chưa chọn file' })
+    const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const fileName = `${Date.now().toString(36)}_${safeName}`
+    const filePath = `lessons/${fileName}`
+    const { data, error } = await db.supabase.storage.from('files').upload(filePath, req.file.buffer, { contentType: req.file.mimetype, upsert: false })
+    if (error) return res.status(500).json({ error: `Lỗi upload: ${error.message}` })
+    const { data: urlData } = db.supabase.storage.from('files').getPublicUrl(filePath)
+    res.json({ url: urlData.publicUrl, name: req.file.originalname, size: req.file.size, type: req.file.mimetype })
+  } catch (err) { res.status(500).json({ error: err.message || 'Lỗi upload file' }) }
+})
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Server error:', err)

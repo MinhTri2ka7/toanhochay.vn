@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plus, X, Trash2, GripVertical, Eye, EyeOff, Play, FileText, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, X, Trash2, GripVertical, Eye, EyeOff, Play, FileText, ChevronUp, ChevronDown, Upload, Paperclip, AlertCircle, Download, Image } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 const emptyForm = { name: '', slug: '', description: '', price: 0, old_price: 0, image: '', type: 'live', status: 'active', category: '' }
-const emptyLesson = { title: '', description: '', video_url: '', is_preview: false, status: 'active', duration: 0 }
+const emptyLesson = { title: '', description: '', video_url: '', is_preview: false, status: 'active', duration: 0, attachments: [] }
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState([])
@@ -21,6 +21,8 @@ export default function AdminCourses() {
   const [editingLesson, setEditingLesson] = useState(null)
   const [loadingLessons, setLoadingLessons] = useState(false)
   const [savingLesson, setSavingLesson] = useState(false)
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [fileError, setFileError] = useState('')
   const [categories, setCategories] = useState([])
 
   useEffect(() => { loadCourses(); loadCategories() }, [])
@@ -358,6 +360,97 @@ export default function AdminCourses() {
                 <input type="checkbox" checked={lessonForm.is_preview} onChange={e => setLessonForm(f => ({ ...f, is_preview: e.target.checked }))} className="rounded" />
                 <span className="text-sm text-gray-700">Cho xem thử (không cần mua)</span>
               </label>
+
+              {/* Attachments section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <span className="flex items-center gap-1"><Paperclip size={14} /> Tài liệu đính kèm</span>
+                </label>
+
+                {/* Existing attachments */}
+                {lessonForm.attachments?.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {lessonForm.attachments.map((att, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                        {att.type?.startsWith('image/') ? (
+                          <Image size={16} className="text-blue-500 shrink-0" />
+                        ) : (
+                          <FileText size={16} className="text-orange-500 shrink-0" />
+                        )}
+                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex-1 text-xs text-brand-700 hover:underline truncate">
+                          {att.name}
+                        </a>
+                        <span className="text-[10px] text-gray-400 shrink-0">
+                          {att.size ? `${(att.size / 1024).toFixed(0)}KB` : ''}
+                        </span>
+                        <button type="button" onClick={() => {
+                          setLessonForm(f => ({ ...f, attachments: f.attachments.filter((_, i) => i !== idx) }))
+                        }} className="text-red-400 hover:text-red-600 shrink-0">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload button */}
+                <div
+                  onClick={() => !uploadingFile && document.getElementById('lesson-file-input')?.click()}
+                  className={`w-full h-16 rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer transition-all
+                    ${uploadingFile ? 'border-brand-400 bg-brand-50' : 'border-gray-300 hover:border-brand-500 hover:bg-brand-50'}`}
+                >
+                  <input
+                    id="lesson-file-input"
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      if (file.size > 20 * 1024 * 1024) {
+                        setFileError(`File "${file.name}" quá lớn (${(file.size/1024/1024).toFixed(1)}MB). Tối đa 20MB.`)
+                        e.target.value = ''
+                        return
+                      }
+                      setUploadingFile(true)
+                      setFileError('')
+                      try {
+                        const fd = new FormData()
+                        fd.append('file', file)
+                        const res = await fetch('/api/upload-file', { method: 'POST', credentials: 'include', body: fd })
+                        const data = await res.json()
+                        if (!res.ok) throw new Error(data.error || 'Upload thất bại')
+                        setLessonForm(f => ({
+                          ...f,
+                          attachments: [...(f.attachments || []), { name: data.name, url: data.url, size: data.size, type: data.type }]
+                        }))
+                      } catch (err) {
+                        setFileError(err.message || 'Lỗi upload file')
+                      } finally {
+                        setUploadingFile(false)
+                        e.target.value = ''
+                      }
+                    }}
+                  />
+                  {uploadingFile ? (
+                    <div className="flex items-center gap-2 text-brand-600 text-xs">
+                      <div className="w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                      Đang upload...
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-400 text-xs">
+                      <Upload size={16} className="mx-auto mb-0.5" />
+                      <p>Ảnh, PDF, Word, Excel... (tối đa 20MB)</p>
+                    </div>
+                  )}
+                </div>
+
+                {fileError && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-red-500 text-xs">
+                    <AlertCircle size={12} /> {fileError}
+                  </div>
+                )}
+              </div>
               <button type="submit" disabled={savingLesson}
                       className="w-full h-10 rounded-xl font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors">
                 {savingLesson ? 'Đang lưu...' : (editingLesson ? 'Cập nhật' : 'Thêm bài học')}
@@ -384,8 +477,13 @@ export default function AdminCourses() {
 
   function openEditLesson(l) {
     setEditingLesson(l)
-    setLessonForm({ title: l.title, description: l.description || '', video_url: l.video_url || '', is_preview: l.is_preview || false, status: l.status || 'active', duration: l.duration || 0 })
+    setLessonForm({
+      title: l.title, description: l.description || '', video_url: l.video_url || '',
+      is_preview: l.is_preview || false, status: l.status || 'active', duration: l.duration || 0,
+      attachments: l.attachments || [],
+    })
     setShowLessonModal(true)
+    setFileError('')
   }
 
   async function saveLesson(e) {

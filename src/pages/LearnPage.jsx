@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Play, CheckCircle, Lock, ChevronLeft, Menu, X, Clock, BookOpen, ChevronRight } from 'lucide-react'
+import { Play, CheckCircle, Lock, ChevronLeft, Menu, X, Clock, BookOpen, ChevronRight, Download, Paperclip, FileText, ImageIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 // Convert any YouTube URL to embed format with protection params
@@ -262,6 +262,39 @@ export default function LearnPage() {
                 {lessonDetail?.description && (
                   <div className="prose prose-invert prose-sm max-w-none text-gray-300 leading-relaxed"
                        dangerouslySetInnerHTML={{ __html: lessonDetail.description }} />
+                )}
+
+                {/* Attachments */}
+                {lessonDetail?.attachments?.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-gray-700">
+                    <h3 className="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+                      <Paperclip size={16} /> Tài liệu đính kèm ({lessonDetail.attachments.length})
+                    </h3>
+                    <div className="grid gap-2">
+                      {lessonDetail.attachments.map((att, idx) => (
+                        <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer"
+                           className="flex items-center gap-3 bg-gray-800/60 hover:bg-gray-700/60 rounded-xl px-4 py-3 transition-colors group">
+                          {att.type?.startsWith('image/') ? (
+                            <div className="w-9 h-9 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
+                              <ImageIcon size={18} className="text-blue-400" />
+                            </div>
+                          ) : (
+                            <div className="w-9 h-9 rounded-lg bg-orange-500/20 flex items-center justify-center shrink-0">
+                              <FileText size={18} className="text-orange-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white font-medium truncate">{att.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {att.size ? `${(att.size / 1024).toFixed(0)} KB` : ''}
+                              {att.type?.startsWith('image/') ? ' • Ảnh' : att.type === 'application/pdf' ? ' • PDF' : ''}
+                            </p>
+                          </div>
+                          <Download size={16} className="text-gray-500 group-hover:text-emerald-400 transition-colors shrink-0" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </>

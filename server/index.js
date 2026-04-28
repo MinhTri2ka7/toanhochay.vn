@@ -160,6 +160,48 @@ app.get('/api/health', (req, res) => {
 })
 
 // ============================================
+// FILE UPLOAD FOR DOCUMENTS (admin only — supports any file type)
+// ============================================
+const fileUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max for documents
+})
+
+app.post('/api/upload-file', authenticateToken, requireAdmin, fileUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Chưa chọn file' })
+
+    const ext = req.file.originalname.split('.').pop()?.toLowerCase() || 'bin'
+    const safeName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')
+    const fileName = `${Date.now().toString(36)}_${safeName}`
+    const filePath = `lessons/${fileName}`
+
+    const { data, error } = await db.supabase.storage
+      .from('files')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('File upload error:', error)
+      return res.status(500).json({ error: `Lỗi upload: ${error.message}` })
+    }
+
+    const { data: urlData } = db.supabase.storage.from('files').getPublicUrl(filePath)
+    res.json({
+      url: urlData.publicUrl,
+      name: req.file.originalname,
+      size: req.file.size,
+      type: req.file.mimetype,
+    })
+  } catch (err) {
+    console.error('File upload error:', err)
+    res.status(500).json({ error: err.message || 'Lỗi upload file' })
+  }
+})
+
+// ============================================
 // ERROR HANDLING
 // ============================================
 app.use((err, req, res, next) => {

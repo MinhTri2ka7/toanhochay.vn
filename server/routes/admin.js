@@ -787,7 +787,7 @@ router.get('/courses/:courseId/lessons', async (req, res) => {
 // POST /api/admin/courses/:courseId/lessons
 router.post('/courses/:courseId/lessons', async (req, res) => {
   try {
-    const { title, description, video_url, is_preview, status, duration } = req.body
+    const { title, description, video_url, is_preview, status, duration, attachments } = req.body
     if (!title?.trim()) return res.status(400).json({ error: 'Tiêu đề bài học không được để trống' })
     const count = await db.count('lessons', { course_id: req.params.courseId })
     await db.insert('lessons', {
@@ -799,6 +799,7 @@ router.post('/courses/:courseId/lessons', async (req, res) => {
       status: status || 'active',
       duration: duration || 0,
       sort_order: count + 1,
+      attachments: attachments || [],
     })
     res.status(201).json({ message: 'Thêm bài học thành công' })
   } catch (err) {
@@ -810,12 +811,13 @@ router.post('/courses/:courseId/lessons', async (req, res) => {
 // PUT /api/admin/lessons/:id
 router.put('/lessons/:id', async (req, res) => {
   try {
-    const { title, description, video_url, is_preview, status, duration } = req.body
+    const { title, description, video_url, is_preview, status, duration, attachments } = req.body
     await db.update('lessons', {
       title, description, video_url,
       is_preview: is_preview ?? false,
       status: status || 'active',
       duration: duration || 0,
+      attachments: attachments || [],
       updated_at: new Date().toISOString(),
     }, { id: parseInt(req.params.id) })
     res.json({ message: 'Cập nhật thành công' })
