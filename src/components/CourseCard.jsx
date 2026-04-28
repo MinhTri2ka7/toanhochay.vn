@@ -12,8 +12,8 @@ export default function CourseCard({ item, type = 'course' }) {
   const [added, setAdded] = useState(false)
   const { addItem } = useCart()
 
-  // Link to listing page (no detail pages yet)
-  const href = type === 'book' ? '/sach' : '/khoa-hoc'
+  // Link to course detail page using slug
+  const href = type === 'book' ? '/sach' : `/khoa-hoc/${item.slug || item.id}`
 
   const hasDiscount = item.old_price || item.oldPrice
   const oldPrice = item.old_price || item.oldPrice

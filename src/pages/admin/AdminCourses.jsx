@@ -384,10 +384,15 @@ export default function AdminCourses() {
     if (!lessonForm.title.trim()) return
     setSavingLesson(true)
     try {
+      let res
       if (editingLesson) {
-        await fetch(`/api/admin/lessons/${editingLesson.id}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lessonForm) })
+        res = await fetch(`/api/admin/lessons/${editingLesson.id}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lessonForm) })
       } else {
-        await fetch(`/api/admin/courses/${lessonCourse.id}/lessons`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lessonForm) })
+        res = await fetch(`/api/admin/courses/${lessonCourse.id}/lessons`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lessonForm) })
+      }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Lỗi khi lưu bài học')
       }
       setShowLessonModal(false)
       setEditingLesson(null)
@@ -395,7 +400,10 @@ export default function AdminCourses() {
       // Reload lessons
       const r = await fetch(`/api/admin/courses/${lessonCourse.id}/lessons`, { credentials: 'include' })
       setLessons(await r.json())
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+      alert(e.message || 'Có lỗi xảy ra khi lưu bài học')
+    }
     finally { setSavingLesson(false) }
   }
 

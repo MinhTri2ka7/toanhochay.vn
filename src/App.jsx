@@ -14,6 +14,7 @@ import './index.css'
 // Public pages
 const HomePage = lazy(() => import('./pages/HomePage'))
 const CoursesPage = lazy(() => import('./pages/CoursesPage'))
+const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'))
 const BooksPage = lazy(() => import('./pages/BooksPage'))
 const ExamsPage = lazy(() => import('./pages/ExamsPage'))
 const ExamTakingPage = lazy(() => import('./pages/ExamTakingPage'))
@@ -54,6 +55,7 @@ if (typeof window !== 'undefined') {
     // Preload JS chunks after a short delay (lower priority)
     setTimeout(() => {
       import('./pages/CoursesPage')
+      import('./pages/CourseDetailPage')
       import('./pages/BooksPage')
       import('./pages/ExamsPage')
       import('./pages/DocumentsPage')
@@ -110,6 +112,7 @@ function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/khoa-hoc" element={<CoursesPage />} />
+              <Route path="/khoa-hoc/:slug" element={<CourseDetailPage />} />
               <Route path="/sach" element={<BooksPage />} />
               <Route path="/de-thi" element={<ExamsPage />} />
               <Route path="/de-thi/:id" element={<ExamTakingPage />} />
