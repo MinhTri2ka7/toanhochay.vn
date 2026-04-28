@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Clock, ChevronRight, Loader2, Lock } from 'lucide-react'
+import { FileText, Clock, ChevronRight, Loader2, Lock, Users } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
 import { fetchExams } from '../lib/api'
 
@@ -94,7 +94,7 @@ export default function ExamsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-3 text-xs flex-wrap">
                   <span className="flex items-center gap-1 text-gray-500">
                     <Clock size={14} /> {exam.duration} phút
                   </span>
@@ -102,6 +102,11 @@ export default function ExamsPage() {
                     <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
                     {config.label}
                   </span>
+                  {exam.attempt_count > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-blue-50 text-blue-600">
+                      <Users size={12} /> {exam.attempt_count} lượt thi
+                    </span>
+                  )}
                   {exam.hasPasscode && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full font-semibold bg-purple-50 text-purple-600">
                       <Lock size={12} /> Có mật khẩu

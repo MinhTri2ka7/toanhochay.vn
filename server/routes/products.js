@@ -79,9 +79,29 @@ router.get('/exams', async (req, res) => {
       .eq('status', 'active')
       .order('created_at', { ascending: false })
     if (error) throw error
-    const result = (data || []).map(e => ({ ...e, hasPasscode: !!e.passcode, passcode: undefined }))
+
+    // Get attempt counts per test
+    const testIds = (data || []).map(e => e.id)
+    let attemptMap = {}
+    if (testIds.length > 0) {
+      const { data: results } = await db.supabase
+        .from('test_results').select('test_id')
+        .in('test_id', testIds)
+      // Count attempts per test_id
+      for (const r of (results || [])) {
+        attemptMap[r.test_id] = (attemptMap[r.test_id] || 0) + 1
+      }
+    }
+
+    const result = (data || []).map(e => ({
+      ...e,
+      hasPasscode: !!e.passcode,
+      passcode: undefined,
+      attempt_count: attemptMap[e.id] || 0,
+    }))
     res.json(result)
   } catch (err) {
+    console.error('Exams error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })
