@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { ShoppingCart, Menu, X, User, LogOut, ChevronRight } from 'lucide-react'
+import { ShoppingCart, Menu, X, User, LogOut, ChevronRight, BookOpen } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useCart } from '../contexts/CartContext'
 import { useSettings } from '../contexts/SettingsContext'
@@ -153,6 +153,11 @@ export default function Layout() {
                           <ChevronRight size={14} className="ml-auto text-gray-300" />
                         </Link>
                       )}
+                      <Link to="/sach-cua-toi" className="flex items-center gap-2 px-4 py-2.5 text-sm text-brand-800
+                                                   hover:bg-brand-50 transition-colors">
+                        <BookOpen size={16} /> Sách của tôi
+                        <ChevronRight size={14} className="ml-auto text-gray-300" />
+                      </Link>
                       <button onClick={handleLogout}
                               className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600
                                          hover:bg-red-50 transition-colors">

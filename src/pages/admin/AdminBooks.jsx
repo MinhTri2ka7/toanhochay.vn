@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus, X, Package } from 'lucide-react'
+import { Plus, X, Package, Link2 } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 function formatPrice(p) { return new Intl.NumberFormat('vi-VN').format(p) }
 
-const emptyForm = { name: '', description: '', price: 0, old_price: 0, image: '', stock: 0, status: 'active', category: '' }
+const emptyForm = { name: '', description: '', price: 0, old_price: 0, image: '', stock: 0, status: 'active', category: '', pdf_url: '' }
 
 export default function AdminBooks() {
   const [books, setBooks] = useState([])
@@ -47,7 +47,7 @@ export default function AdminBooks() {
     setForm({
       name: book.name, description: book.description || '', price: book.price,
       old_price: book.old_price, image: book.image || '', stock: book.stock || 0,
-      status: book.status, category: book.category || '',
+      status: book.status, category: book.category || '', pdf_url: book.pdf_url || '',
     })
     setError('')
     setShowModal(true)
@@ -221,6 +221,15 @@ export default function AdminBooks() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3}
                           className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none resize-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <span className="flex items-center gap-1"><Link2 size={14} /> Link tài liệu (Google Drive)</span>
+                </label>
+                <input type="url" value={form.pdf_url} onChange={e => setForm(f => ({ ...f, pdf_url: e.target.value }))}
+                       placeholder="https://drive.google.com/..."
+                       className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
+                <p className="text-xs text-gray-400 mt-1">Link Google Drive hoặc link tải file. Người mua sẽ nhận được link này sau khi thanh toán.</p>
               </div>
               <button type="submit" disabled={saving}
                       className="w-full h-10 rounded-xl font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors">

@@ -329,6 +329,53 @@ router.get('/my-courses', authenticateToken, async (req, res) => {
   }
 })
 
+// GET /api/my-books — list user's purchased books with download links
+router.get('/my-books', authenticateToken, async (req, res) => {
+  try {
+    const { data, error } = await db.supabase
+      .from('user_books').select('book_id, activated_at')
+      .eq('user_id', req.user.id)
+    if (error) throw error
+    if (!data?.length) return res.json([])
+
+    const bookIds = data.map(ub => ub.book_id)
+    const { data: books } = await db.supabase
+      .from('books').select('id, name, image, pdf_url, description')
+      .in('id', bookIds)
+
+    res.json((books || []).map(b => ({
+      ...b,
+      activatedAt: data.find(ub => ub.book_id === b.id)?.activated_at,
+    })))
+  } catch (err) {
+    console.error('My books error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// GET /api/books/:id/link — get download link for purchased book
+router.get('/books/:id/link', authenticateToken, async (req, res) => {
+  try {
+    // Check ownership
+    const { data: ownership } = await db.supabase
+      .from('user_books').select('id')
+      .eq('user_id', req.user.id)
+      .eq('book_id', req.params.id)
+      .maybeSingle()
+
+    if (!ownership) {
+      return res.status(403).json({ error: 'Bạn chưa mua sách này' })
+    }
+
+    const book = await db.selectOne('books', { id: req.params.id })
+    if (!book) return res.status(404).json({ error: 'Không tìm thấy sách' })
+
+    res.json({ pdf_url: book.pdf_url || '', name: book.name })
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 // GET /api/learn/:slug — get course + lessons for learning (requires enrollment)
 router.get('/learn/:slug', authenticateToken, async (req, res) => {
   try {

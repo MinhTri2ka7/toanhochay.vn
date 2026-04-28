@@ -223,14 +223,14 @@ router.get('/books', async (req, res) => {
 
 router.post('/books', async (req, res) => {
   try {
-    const { name, description, price, old_price, image, stock, category } = req.body
+    const { name, description, price, old_price, image, stock, category, pdf_url } = req.body
     if (!name || !name.trim()) return res.status(400).json({ error: 'Tên sách không được để trống' })
     if (price < 0) return res.status(400).json({ error: 'Giá không được âm' })
     const bookId = Date.now().toString(36) + Math.random().toString(36).substr(2)
     await db.insert('books', {
       id: bookId, name, description: description || '',
       price: price || 0, old_price: old_price || 0, image: image || '', stock: stock || 0,
-      category: category || '',
+      category: category || '', pdf_url: pdf_url || '',
     })
     res.status(201).json({ message: 'Tạo sách thành công', id: bookId })
   } catch (err) {
@@ -240,10 +240,14 @@ router.post('/books', async (req, res) => {
 
 router.put('/books/:id', async (req, res) => {
   try {
-    const { name, description, price, old_price, image, stock, status, category } = req.body
+    const { name, description, price, old_price, image, stock, status, category, pdf_url } = req.body
     if (!name || !name.trim()) return res.status(400).json({ error: 'Tên sách không được để trống' })
     if (price < 0) return res.status(400).json({ error: 'Giá không được âm' })
-    await db.update('books', { name, description, price, old_price, image, stock: stock ?? 0, status: status || 'active', category: category || '' }, { id: req.params.id })
+    await db.update('books', {
+      name, description, price, old_price, image,
+      stock: stock ?? 0, status: status || 'active',
+      category: category || '', pdf_url: pdf_url || '',
+    }, { id: req.params.id })
     res.json({ message: 'Cập nhật thành công' })
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server' })
@@ -366,6 +370,11 @@ router.put('/orders/:id/status', async (req, res) => {
           try {
             await db.upsert('user_courses', { user_id: order.user_id, course_id: item.product_id }, { onConflict: 'user_id, course_id' })
           } catch (e) { /* ignore duplicates */ }
+        }
+        if (item.product_type === 'book') {
+          try {
+            await db.upsert('user_books', { user_id: order.user_id, book_id: item.product_id }, { onConflict: 'user_id, book_id' })
+          } catch (e) { /* ignore duplicates or missing table */ }
         }
       }
 
