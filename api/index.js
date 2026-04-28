@@ -39,17 +39,10 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/api', apiLimiter)
 
 // ============================================
-// FILE UPLOAD (uses /tmp on Vercel serverless)
+// FILE UPLOAD (Supabase Storage)
 // ============================================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, '/tmp'),
-  filename: (req, file, cb) => {
-    const ext = file.originalname.split('.').pop()
-    cb(null, Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6) + '.' + ext)
-  },
-})
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) cb(null, true)
@@ -57,15 +50,40 @@ const upload = multer({
   },
 })
 
-app.post('/api/upload', authenticateToken, requireAdmin, upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Chưa chọn file' })
-  res.json({ url: `/tmp/${req.file.filename}`, filename: req.file.filename })
+app.post('/api/upload', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Chưa chọn file' })
+
+    const ext = req.file.originalname.split('.').pop()?.toLowerCase() || 'png'
+    const fileName = `${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 6)}.${ext}`
+    const filePath = `images/${fileName}`
+
+    // Upload to Supabase Storage
+    const { data, error } = await db.supabase.storage
+      .from('uploads')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('Supabase storage upload error:', error)
+      return res.status(500).json({ error: `Lỗi upload: ${error.message}` })
+    }
+
+    // Get public URL
+    const { data: urlData } = db.supabase.storage.from('uploads').getPublicUrl(filePath)
+    res.json({ url: urlData.publicUrl, filename: fileName })
+  } catch (err) {
+    console.error('Upload error:', err)
+    res.status(500).json({ error: err.message || 'Lỗi upload ảnh' })
+  }
 })
 
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'File quá lớn (tối đa 5MB)' })
-    return res.status(400).json({ error: err.message })
+    return res.status(400).json({ error: `Lỗi upload: ${err.message}` })
   }
   if (err.message?.includes('Chỉ chấp nhận')) return res.status(400).json({ error: err.message })
   next(err)

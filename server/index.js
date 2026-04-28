@@ -20,21 +20,13 @@ import db from './db.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// Ensure uploads directory exists
+// Uploads directory for local dev fallback
 const uploadsDir = join(__dirname, 'uploads')
 if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true })
 
-// Multer config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = file.originalname.split('.').pop()
-    const name = Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6) + '.' + ext
-    cb(null, name)
-  },
-})
+// Multer config — memory storage for Supabase upload
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -67,24 +59,50 @@ app.use(express.urlencoded({ extended: true }))
 app.use('/api', apiLimiter)
 
 // ============================================
-// STATIC FILES
+// STATIC FILES (local dev fallback)
 // ============================================
 app.use('/uploads', express.static(uploadsDir))
 
 // ============================================
-// FILE UPLOAD ROUTE (admin only)
+// FILE UPLOAD ROUTE (admin only) — uploads to Supabase Storage
 // ============================================
-app.post('/api/upload', authenticateToken, requireAdmin, upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Chưa chọn file' })
-  const url = `/uploads/${req.file.filename}`
-  res.json({ url, filename: req.file.filename })
+app.post('/api/upload', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Chưa chọn file' })
+
+    const ext = req.file.originalname.split('.').pop()?.toLowerCase() || 'png'
+    const fileName = `${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 6)}.${ext}`
+    const filePath = `images/${fileName}`
+
+    // Upload to Supabase Storage
+    const { data, error } = await db.supabase.storage
+      .from('uploads')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('Supabase storage upload error:', error)
+      return res.status(500).json({ error: `Lỗi upload: ${error.message}` })
+    }
+
+    // Get public URL
+    const { data: urlData } = db.supabase.storage.from('uploads').getPublicUrl(filePath)
+    const url = urlData.publicUrl
+
+    res.json({ url, filename: fileName })
+  } catch (err) {
+    console.error('Upload error:', err)
+    res.status(500).json({ error: err.message || 'Lỗi upload ảnh' })
+  }
 })
 
 // Handle multer errors
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'File quá lớn (tối đa 5MB)' })
-    return res.status(400).json({ error: err.message })
+    return res.status(400).json({ error: `Lỗi upload: ${err.message}` })
   }
   if (err.message?.includes('Chỉ chấp nhận')) return res.status(400).json({ error: err.message })
   next(err)
