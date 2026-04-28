@@ -9,14 +9,24 @@ function toEmbedUrl(url) {
   let videoId = ''
   try {
     const u = new URL(url)
-    if (u.hostname.includes('youtu.be')) videoId = u.pathname.slice(1)
-    else if (u.hostname.includes('youtube.com')) {
-      if (u.pathname.includes('/embed/')) return url + (url.includes('?') ? '&' : '?') + 'rel=0&modestbranding=1&disablekb=1&controls=1'
-      videoId = u.searchParams.get('v')
+    if (u.hostname.includes('youtu.be')) {
+      videoId = u.pathname.slice(1).split('/')[0]
+    } else if (u.hostname.includes('youtube.com')) {
+      if (u.pathname.includes('/embed/')) {
+        videoId = u.pathname.split('/embed/')[1]?.split('?')[0]
+      } else if (u.pathname.includes('/shorts/')) {
+        videoId = u.pathname.split('/shorts/')[1]?.split('?')[0]
+      } else {
+        videoId = u.searchParams.get('v')
+      }
     }
-  } catch { videoId = url }
+  } catch {
+    // If URL parsing fails, treat the whole string as a video ID
+    if (/^[a-zA-Z0-9_-]{11}$/.test(url)) videoId = url
+  }
   if (!videoId) return ''
-  return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&disablekb=1&controls=1`
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&origin=${encodeURIComponent(origin)}`
 }
 
 function formatDuration(sec) {
@@ -221,10 +231,9 @@ export default function LearnPage() {
                 <iframe
                   src={embedUrl}
                   className="absolute inset-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   title={activeLesson?.title}
-                  referrerPolicy="no-referrer"
                 />
                 {/* Transparent overlay to prevent easy inspect */}
                 <div className="absolute inset-0 pointer-events-none" />
