@@ -162,58 +162,64 @@ export default function AboutPage() {
 
       {/* ========== TIMELINE ========== */}
       <div className="mx-4 md:mx-16 xl:mx-[10%] mt-12">
-        <ScrollReveal>
-          <div className="text-center mb-10">
-            <h2 className="text-2xl lg:text-3xl font-bold text-brand-900"
-                style={{ fontFamily: 'var(--font-heading)' }}>
-              Hành trình phát triển
-            </h2>
-            <p className="text-gray-500 mt-2">Những cột mốc quan trọng trong sự nghiệp giảng dạy</p>
-          </div>
-        </ScrollReveal>
+        {/* Striped background wrapper */}
+        <div className="rounded-3xl overflow-hidden p-8 lg:p-12"
+             style={{
+               background: 'repeating-linear-gradient(135deg, #ffffff 0px, #ffffff 18px, #fff7ed 18px, #fff7ed 20px, #ffffff 20px, #ffffff 38px, #fed7aa 38px, #fed7aa 40px)',
+             }}>
+          <ScrollReveal>
+            <div className="text-center mb-10">
+              <h2 className="text-2xl lg:text-3xl font-bold text-brand-900"
+                  style={{ fontFamily: 'var(--font-heading)' }}>
+                Hành trình phát triển
+              </h2>
+              <p className="text-gray-500 mt-2">Những cột mốc quan trọng trong sự nghiệp giảng dạy</p>
+            </div>
+          </ScrollReveal>
 
-        <div className="relative max-w-3xl mx-auto">
-          {/* Timeline line */}
-          <div className="absolute left-6 lg:left-1/2 lg:-translate-x-px top-0 bottom-0 w-0.5
-                          bg-brand-400" />
+          <div className="relative max-w-3xl mx-auto">
+            {/* Timeline line */}
+            <div className="absolute left-6 lg:left-1/2 lg:-translate-x-px top-0 bottom-0 w-0.5
+                            bg-gradient-to-b from-amber-400 via-orange-400 to-amber-500" />
 
-          {timeline.map((item, i) => {
-            const isLeft = i % 2 === 0
-            const TimeIcon = timelineIcons[i % timelineIcons.length]
+            {timeline.map((item, i) => {
+              const isLeft = i % 2 === 0
+              const TimeIcon = timelineIcons[i % timelineIcons.length]
 
-            return (
-              <ScrollReveal key={i} delay={i * 120} direction={isLeft ? 'left' : 'right'}>
-                <div className={`relative flex items-start gap-6 mb-8
-                                 lg:${isLeft ? 'flex-row' : 'flex-row-reverse'}
-                                 lg:gap-12`}>
-                  {/* Timeline dot */}
-                  <div className="absolute left-6 lg:left-1/2 -translate-x-1/2 z-10
-                                  w-12 h-12 rounded-full bg-white shadow-card
-                                  flex items-center justify-center
-                                  border-2 border-brand-400">
-                    <TimeIcon size={20} className="text-brand-600" />
-                  </div>
+              return (
+                <ScrollReveal key={i} delay={i * 120} direction={isLeft ? 'left' : 'right'}>
+                  <div className={`relative flex items-start gap-6 mb-8
+                                   lg:${isLeft ? 'flex-row' : 'flex-row-reverse'}
+                                   lg:gap-12`}>
+                    {/* Timeline dot */}
+                    <div className="absolute left-6 lg:left-1/2 -translate-x-1/2 z-10
+                                    w-12 h-12 rounded-full bg-white shadow-lg
+                                    flex items-center justify-center
+                                    border-2 border-amber-400">
+                      <TimeIcon size={20} className="text-orange-500" />
+                    </div>
 
-                  {/* Content */}
-                  <div className={`ml-20 lg:ml-0 lg:w-[calc(50%-3rem)]
-                                   ${isLeft ? 'lg:text-right lg:pr-0' : 'lg:text-left lg:ml-auto lg:pl-0'}`}>
-                    <div className="bg-white rounded-2xl shadow-card p-5
-                                    transition-all duration-300">
-                      <span className="inline-block text-xs font-bold text-brand-600
-                                       bg-brand-100 px-2.5 py-0.5 rounded-full mb-2">
-                        {item.year}
-                      </span>
-                      <h3 className="font-bold text-brand-900 text-base"
-                          style={{ fontFamily: 'var(--font-heading)' }}>
-                        {item.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">{item.desc}</p>
+                    {/* Content */}
+                    <div className={`ml-20 lg:ml-0 lg:w-[calc(50%-3rem)]
+                                     ${isLeft ? 'lg:text-right lg:pr-0' : 'lg:text-left lg:ml-auto lg:pl-0'}`}>
+                      <div className="bg-white rounded-2xl shadow-card p-5
+                                      transition-all duration-300 border border-amber-100/50">
+                        <span className="inline-block text-xs font-bold text-orange-600
+                                         bg-orange-100 px-2.5 py-0.5 rounded-full mb-2">
+                          {item.year}
+                        </span>
+                        <h3 className="font-bold text-brand-900 text-base"
+                            style={{ fontFamily: 'var(--font-heading)' }}>
+                          {item.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1 leading-relaxed">{item.desc}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </ScrollReveal>
-            )
-          })}
+                </ScrollReveal>
+              )
+            })}
+          </div>
         </div>
       </div>
 
