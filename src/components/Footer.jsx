@@ -11,32 +11,32 @@ export default function Footer() {
 
   return (
     <footer className="relative mt-12 overflow-hidden"
-            style={{ background: 'linear-gradient(180deg, #FFF7E6 0%, #FFEDD5 40%, #FDE0B3 100%)' }}>
+            style={{ background: 'linear-gradient(180deg, #F6C044 0%, #E8A520 40%, #D4920A 80%, #C07E00 100%)' }}>
       {/* Decorative top wave */}
-      <div className="absolute top-0 left-0 right-0 h-1.5"
-           style={{ background: 'linear-gradient(90deg, #FFB018, #F59E0B, #FB923C, #FFB018)' }} />
+      <div className="absolute top-0 left-0 right-0 h-2"
+           style={{ background: 'linear-gradient(90deg, #B87400, #E09500, #FB923C, #E09500, #B87400)' }} />
 
       {/* Subtle decorative blobs */}
-      <div className="absolute top-16 -left-20 w-64 h-64 rounded-full opacity-20 blur-3xl"
-           style={{ background: 'radial-gradient(circle, #FFB018 0%, transparent 70%)' }} />
-      <div className="absolute bottom-10 -right-16 w-52 h-52 rounded-full opacity-15 blur-3xl"
-           style={{ background: 'radial-gradient(circle, #FB923C 0%, transparent 70%)' }} />
+      <div className="absolute top-16 -left-20 w-64 h-64 rounded-full opacity-25 blur-3xl"
+           style={{ background: 'radial-gradient(circle, #FFD866 0%, transparent 70%)' }} />
+      <div className="absolute bottom-10 -right-16 w-52 h-52 rounded-full opacity-20 blur-3xl"
+           style={{ background: 'radial-gradient(circle, #FFA500 0%, transparent 70%)' }} />
 
       <div className="max-w-6xl mx-auto px-6 pt-12 pb-6 relative">
         {/* Top CTA Banner */}
         <div className="rounded-2xl p-6 lg:p-8 mb-10 flex flex-col lg:flex-row items-center justify-between gap-4
-                        border border-brand-300/50 shadow-lg"
-             style={{ background: 'linear-gradient(135deg, #FFF9ED 0%, #FFE8B8 100%)' }}>
+                        border border-white/30 shadow-lg"
+             style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 100%)', backdropFilter: 'blur(8px)' }}>
           <div>
-            <h3 className="text-lg lg:text-xl font-bold text-brand-800" style={{ fontFamily: 'var(--font-heading)' }}>
+            <h3 className="text-lg lg:text-xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
               Sẵn sàng chinh phục Toán học? 🚀
             </h3>
-            <p className="text-sm text-brand-600/80 mt-1">Bắt đầu học ngay hôm nay với hệ thống khóa học chất lượng cao</p>
+            <p className="text-sm text-white/80 mt-1">Bắt đầu học ngay hôm nay với hệ thống khóa học chất lượng cao</p>
           </div>
           <Link to="/khoa-hoc"
                 className="inline-flex items-center h-11 px-6 rounded-xl font-bold text-sm
-                           bg-brand-600 text-white shadow-md
-                           hover:bg-brand-700 hover:shadow-lg transition-all duration-200 whitespace-nowrap shrink-0">
+                           bg-white text-brand-800 shadow-md
+                           hover:bg-brand-50 hover:shadow-lg transition-all duration-200 whitespace-nowrap shrink-0">
             Xem khoá học →
           </Link>
         </div>
@@ -48,18 +48,18 @@ export default function Footer() {
             <div className="flex items-center gap-3 mb-4">
               <img src={settings.logo || '/favicon.svg'} alt={siteName}
                    className="w-11 h-11 rounded-xl shadow-md" />
-              <h2 className="text-lg font-bold text-brand-800" style={{ fontFamily: 'var(--font-heading)' }}>
+              <h2 className="text-lg font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
                 {siteName}
               </h2>
             </div>
-            <p className="text-sm text-brand-700/70 leading-relaxed">
+            <p className="text-sm text-white/75 leading-relaxed">
               {settings.site_description || '8 năm kinh nghiệm luyện thi đại học chất lượng cao. Đồng hành cùng hàng ngàn học sinh trên cả nước.'}
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/90 mb-4">
               Sản phẩm
             </h3>
             <div className="flex flex-col gap-2">
@@ -70,7 +70,7 @@ export default function Footer() {
                 { label: 'Tài liệu', path: '/tai-lieu' },
               ].map(link => (
                 <Link key={link.path} to={link.path}
-                      className="text-sm text-brand-700/70 hover:text-brand-800 hover:translate-x-0.5 transition-all duration-200">
+                      className="text-sm text-white/75 hover:text-white hover:translate-x-0.5 transition-all duration-200">
                   {link.label}
                 </Link>
               ))}
@@ -79,7 +79,7 @@ export default function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/90 mb-4">
               Hỗ trợ
             </h3>
             <div className="flex flex-col gap-2">
@@ -90,7 +90,7 @@ export default function Footer() {
                 { label: 'Đăng ký', path: '/register' },
               ].map(link => (
                 <Link key={link.path} to={link.path}
-                      className="text-sm text-brand-700/70 hover:text-brand-800 hover:translate-x-0.5 transition-all duration-200">
+                      className="text-sm text-white/75 hover:text-white hover:translate-x-0.5 transition-all duration-200">
                   {link.label}
                 </Link>
               ))}
@@ -99,24 +99,24 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-brand-600 mb-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/90 mb-4">
               Liên hệ
             </h3>
-            <div className="space-y-3 text-sm text-brand-700/70">
+            <div className="space-y-3 text-sm text-white/75">
               {settings.address && (
                 <p className="flex items-start gap-2.5">
-                  <MapPin size={14} className="shrink-0 mt-0.5 text-brand-500" />
+                  <MapPin size={14} className="shrink-0 mt-0.5 text-white/90" />
                   <span>{settings.address}</span>
                 </p>
               )}
               {settings.email && (
                 <p className="flex items-center gap-2.5">
-                  <Mail size={14} className="shrink-0 text-brand-500" />
+                  <Mail size={14} className="shrink-0 text-white/90" />
                   <span>{settings.email}</span>
                 </p>
               )}
               <p className="flex items-center gap-2.5">
-                <PhoneCall size={14} className="shrink-0 text-brand-500" />
+                <PhoneCall size={14} className="shrink-0 text-white/90" />
                 <span>{settings.phone || '0984511618'}</span>
               </p>
             </div>
@@ -133,8 +133,8 @@ export default function Footer() {
           ].map(({ href, label, icon }) => (
             <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
                className="inline-flex items-center justify-center w-10 h-10 rounded-xl
-                          bg-white/60 text-brand-600 border border-brand-200/60
-                          hover:bg-brand-500 hover:text-white hover:border-brand-500
+                          bg-white/25 text-white border border-white/20
+                          hover:bg-white hover:text-brand-700 hover:border-white
                           hover:shadow-md hover:-translate-y-0.5
                           transition-all duration-200">
               {icon}
@@ -143,14 +143,14 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-brand-300/50 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-brand-600/70">
+        <div className="border-t border-white/25 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
           <p className="flex items-center gap-1">
-            Made with <Heart size={12} className="text-red-400" /> by{' '}
-            <span className="text-brand-700 font-medium">ai4dev</span>
+            Made with <Heart size={12} className="text-red-300" /> by{' '}
+            <span className="text-white/80 font-medium">ai4dev</span>
           </p>
           <button onClick={scrollToTop}
-                  className="inline-flex items-center gap-1.5 text-brand-600
-                             hover:text-brand-800 transition-all duration-200">
+                  className="inline-flex items-center gap-1.5 text-white/70
+                             hover:text-white transition-all duration-200">
             <ArrowUp size={14} /> Về đầu trang
           </button>
         </div>
