@@ -270,7 +270,7 @@ export default function ExamTakingPage() {
                     </div>
                     {q.image && <img src={q.image} alt="" className="max-h-48 rounded-lg border border-gray-200 mb-3 object-contain" />}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                      {['A', 'B', 'C', 'D'].map(opt => {
+                      {['A', 'B', 'C', 'D', 'E'].map(opt => {
                         const optText = q[`option_${opt.toLowerCase()}`]
                         const optImg = q[`option_${opt.toLowerCase()}_image`]
                         if (!optText && !optImg) return null
@@ -398,7 +398,7 @@ export default function ExamTakingPage() {
               </p>
               {q.image && <img src={q.image} alt="" className="max-h-56 rounded-lg border border-gray-200 mb-4 object-contain" />}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {['A', 'B', 'C', 'D'].map(opt => {
+                {['A', 'B', 'C', 'D', 'E'].map(opt => {
                   const optText = q[`option_${opt.toLowerCase()}`]
                   const optImg = q[`option_${opt.toLowerCase()}_image`]
                   if (!optText && !optImg) return null

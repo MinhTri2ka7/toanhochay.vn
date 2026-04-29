@@ -5,8 +5,8 @@ import ImageUpload from '../../components/ImageUpload'
 const emptyExam = { title: '', subject: 'math', duration: 90, difficulty: 'medium', passcode: '', status: 'active', points_correct: 1, points_wrong: 0 }
 const emptyQ = {
   question_type: 'multiple_choice', question_text: '', image: '',
-  option_a: '', option_b: '', option_c: '', option_d: '',
-  option_a_image: '', option_b_image: '', option_c_image: '', option_d_image: '',
+  option_a: '', option_b: '', option_c: '', option_d: '', option_e: '',
+  option_a_image: '', option_b_image: '', option_c_image: '', option_d_image: '', option_e_image: '',
   correct_answer: 'A', explanation: '', points_correct: 1, points_wrong: 0,
 }
 
@@ -241,7 +241,7 @@ export default function AdminExams() {
                   {/* Options (only for multiple choice) */}
                   {q.question_type !== 'essay' && (
                     <div className="grid grid-cols-2 gap-1.5 mt-3">
-                      {['A', 'B', 'C', 'D'].map(opt => {
+                      {['A', 'B', 'C', 'D', 'E'].map(opt => {
                         const val = q[`option_${opt.toLowerCase()}`]
                         const img = q[`option_${opt.toLowerCase()}_image`]
                         if (!val && !img) return null
@@ -391,7 +391,7 @@ export default function AdminExams() {
               {qForm.question_type === 'multiple_choice' && (
                 <>
                   <div className="space-y-3">
-                    {['A', 'B', 'C', 'D'].map(opt => {
+                    {['A', 'B', 'C', 'D', 'E'].map(opt => {
                       const key = opt.toLowerCase()
                       return (
                         <div key={opt} className={`rounded-xl border-2 p-3 transition-all
@@ -419,7 +419,7 @@ export default function AdminExams() {
                       )
                     })}
                   </div>
-                  <p className="text-xs text-gray-400">Bấm vào chữ cái (A/B/C/D) để chọn đáp án đúng. Ảnh đáp án là tuỳ chọn.</p>
+                  <p className="text-xs text-gray-400">Bấm vào chữ cái (A/B/C/D/E) để chọn đáp án đúng. Đáp án E là tuỳ chọn. Ảnh đáp án là tuỳ chọn.</p>
                 </>
               )}
 

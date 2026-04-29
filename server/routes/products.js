@@ -119,7 +119,7 @@ router.get('/exams/:id', async (req, res) => {
     const questions = await db.selectAll('questions', {
       where: { test_id: parseInt(req.params.id) },
       order: { column: 'sort_order', ascending: true },
-      columns: 'id, question_type, question_text, image, option_a, option_b, option_c, option_d, sort_order'
+      columns: 'id, question_type, question_text, image, option_a, option_b, option_c, option_d, option_e, sort_order'
     })
 
     res.json({ ...exam, passcode: undefined, hasPasscode: false, questions })
@@ -139,7 +139,7 @@ router.post('/exams/:id/verify-passcode', async (req, res) => {
       const questions = await db.selectAll('questions', {
         where: { test_id: parseInt(req.params.id) },
         order: { column: 'sort_order', ascending: true },
-        columns: 'id, question_type, question_text, image, option_a, option_b, option_c, option_d, sort_order'
+        columns: 'id, question_type, question_text, image, option_a, option_b, option_c, option_d, option_e, sort_order'
       })
       return res.json({ success: true, questions })
     }

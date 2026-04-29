@@ -514,17 +514,18 @@ router.get('/exams/:id/questions', async (req, res) => {
 
 router.post('/exams/:id/questions', async (req, res) => {
   try {
-    const { question_type, question_text, image, option_a, option_b, option_c, option_d,
-            option_a_image, option_b_image, option_c_image, option_d_image,
+    const { question_type, question_text, image, option_a, option_b, option_c, option_d, option_e,
+            option_a_image, option_b_image, option_c_image, option_d_image, option_e_image,
             correct_answer, explanation, points_correct, points_wrong } = req.body
     if (!question_text) return res.status(400).json({ error: 'Nội dung câu hỏi không được để trống' })
     const count = await db.count('questions', { test_id: parseInt(req.params.id) })
     await db.insert('questions', {
       test_id: parseInt(req.params.id), question_type: question_type || 'multiple_choice',
       question_text, image: image || null, option_a: option_a || null, option_b: option_b || null,
-      option_c: option_c || null, option_d: option_d || null,
+      option_c: option_c || null, option_d: option_d || null, option_e: option_e || null,
       option_a_image: option_a_image || '', option_b_image: option_b_image || '',
       option_c_image: option_c_image || '', option_d_image: option_d_image || '',
+      option_e_image: option_e_image || '',
       correct_answer: correct_answer || null,
       explanation: explanation || '', sort_order: count + 1,
       points_correct: points_correct ?? 1, points_wrong: points_wrong ?? 0,
