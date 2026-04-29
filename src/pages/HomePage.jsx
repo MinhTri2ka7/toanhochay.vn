@@ -14,15 +14,30 @@ const sectionIcons = {
 }
 
 /* ========== Trust Stats Marquee ========== */
-const trustStats = [
+const defaultTrustStats = [
   { icon: GraduationCap, text: '8+ năm kinh nghiệm' },
   { icon: Users, text: '170K+ học sinh theo học' },
   { icon: Trophy, text: 'Top 1 Livestream Toán VN' },
   { icon: Zap, text: 'Thủ khoa ĐH 28 điểm' },
 ]
 
-function TrustBar() {
-  const doubled = useMemo(() => [...trustStats, ...trustStats, ...trustStats, ...trustStats], [])
+const trustIcons = [GraduationCap, Users, Trophy, Zap]
+
+function TrustBar({ settings }) {
+  const trustStats = useMemo(() => {
+    // Build from about_stat_* settings if available
+    const stats = [1, 2, 3, 4].map((n, i) => {
+      const value = settings[`about_stat_${n}_value`]
+      const label = settings[`about_stat_${n}_label`]
+      if (value && label) {
+        return { icon: trustIcons[i % trustIcons.length], text: `${value} ${label}` }
+      }
+      return defaultTrustStats[i] || null
+    }).filter(Boolean)
+    return stats.length > 0 ? stats : defaultTrustStats
+  }, [settings])
+
+  const doubled = useMemo(() => [...trustStats, ...trustStats, ...trustStats, ...trustStats], [trustStats])
 
   return (
     <div className="overflow-hidden bg-brand-800 py-3">
@@ -267,12 +282,12 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Mini stats row */}
+                {/* Mini stats row — uses same about_stat_* keys as About page */}
                 <div className="grid grid-cols-3 gap-2.5">
                   {[
-                    { num: settings.stat_1_value || '170K+', label: settings.stat_1_label || 'Học sinh' },
-                    { num: settings.stat_2_value || '#1', label: settings.stat_2_label || 'Livestream' },
-                    { num: settings.stat_3_value || '8+', label: settings.stat_3_label || 'Năm KN' },
+                    { num: settings.about_stat_2_value || '170K+', label: settings.about_stat_2_label || 'Học sinh' },
+                    { num: settings.about_stat_3_value || '#1', label: settings.about_stat_3_label || 'Top Livestream' },
+                    { num: settings.about_stat_1_value || '8+', label: settings.about_stat_1_label || 'Năm KN' },
                   ].map((s, i) => (
                     <div key={i} className="bg-white rounded-xl shadow-card p-3 text-center
                                             border border-brand-100/50">
@@ -307,7 +322,7 @@ export default function HomePage() {
 
       {/* ========== TRUST BAR ========== */}
       <div className="mt-6 rounded-2xl mx-4 lg:mx-8 2xl:mx-[10%] 3xl:mx-[15%] overflow-hidden">
-        <TrustBar />
+        <TrustBar settings={settings} />
       </div>
 
       <div className="mx-4 lg:mx-8 2xl:mx-[10%] 3xl:mx-[15%]">

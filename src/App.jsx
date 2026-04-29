@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CartProvider } from './contexts/CartContext'
 import { SettingsProvider } from './contexts/SettingsContext'
+import { PurchaseProvider } from './contexts/PurchaseContext'
 import Layout from './components/Layout'
 import { prefetchPublicData } from './lib/api'
 import './index.css'
@@ -105,6 +106,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PurchaseProvider>
         <CartProvider>
           <SettingsProvider>
           <Suspense fallback={<PageLoader />}>
@@ -156,6 +158,7 @@ function App() {
           </Suspense>
           </SettingsProvider>
         </CartProvider>
+        </PurchaseProvider>
       </AuthProvider>
     </BrowserRouter>
   )

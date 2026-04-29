@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, X, Trash2, FileText, Edit, ExternalLink } from 'lucide-react'
+import FileUpload from '../../components/FileUpload'
 
 const emptyDoc = { title: '', description: '', file_url: '', file_type: 'PDF', pages: 0, category: 'general', status: 'active' }
 
@@ -152,12 +153,19 @@ export default function AdminDocuments() {
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
                           className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none resize-none" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Link tài liệu (URL / Google Drive)</label>
-                <input type="text" value={form.file_url} onChange={e => setForm(f => ({ ...f, file_url: e.target.value }))}
-                       placeholder="https://drive.google.com/..."
-                       className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
-              </div>
+              <FileUpload
+                value={form.file_url}
+                onChange={url => setForm(f => ({ ...f, file_url: url }))}
+                onFileInfo={info => {
+                  // Auto-detect file type from uploaded file
+                  const ext = info.name?.split('.').pop()?.toUpperCase() || ''
+                  const typeMap = { PDF: 'PDF', DOC: 'DOC', DOCX: 'DOC', XLS: 'XLS', XLSX: 'XLS', PPT: 'PPT', PPTX: 'PPT', MP4: 'VIDEO', AVI: 'VIDEO', MOV: 'VIDEO' }
+                  if (typeMap[ext]) {
+                    setForm(f => ({ ...f, file_type: typeMap[ext] }))
+                  }
+                }}
+                label="Link tài liệu (URL / Google Drive / Upload)"
+              />
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Loại file</label>

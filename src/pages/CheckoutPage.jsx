@@ -4,6 +4,7 @@ import { Loader2, CheckCircle, CreditCard, LogIn, UserPlus, ShieldCheck } from '
 import { useAuth } from '../contexts/AuthContext'
 import { useCart } from '../contexts/CartContext'
 import { useSettings } from '../contexts/SettingsContext'
+import { usePurchases } from '../contexts/PurchaseContext'
 import ScrollReveal from '../components/ScrollReveal'
 import { formatPrice } from '../lib/api'
 
@@ -11,6 +12,7 @@ export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth()
   const { items, totalAmount, clearCart } = useCart()
   const settings = useSettings()
+  const { refresh: refreshPurchases } = usePurchases()
   const navigate = useNavigate()
 
   const [form, setForm] = useState({
@@ -47,6 +49,7 @@ export default function CheckoutPage() {
           const data = await r.json()
           if (data.status === 'paid') {
             setOrderPaid(true)
+            refreshPurchases() // Update owned courses/books immediately
             clearInterval(interval)
           }
         }

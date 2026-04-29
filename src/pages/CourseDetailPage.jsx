@@ -226,22 +226,32 @@ export default function CourseDetailPage() {
               )}
 
               <div className="p-6">
-                {/* Price */}
+                {/* Price / Owned status */}
                 <div className="mb-4">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-extrabold text-brand-700">
-                      {formatPrice(course.price)}đ
-                    </span>
-                    {hasDiscount && (
-                      <span className="text-base text-gray-400 line-through font-medium">
-                        {formatPrice(course.old_price)}đ
+                  {enrolled ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-700">
+                        <CheckCircle size={16} /> Đã mua
                       </span>
-                    )}
-                  </div>
-                  {discountPercent > 0 && (
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-xs font-bold bg-red-100 text-red-600">
-                      Giảm {discountPercent}%
-                    </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-extrabold text-brand-700">
+                          {formatPrice(course.price)}đ
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-base text-gray-400 line-through font-medium">
+                            {formatPrice(course.old_price)}đ
+                          </span>
+                        )}
+                      </div>
+                      {discountPercent > 0 && (
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-xs font-bold bg-red-100 text-red-600">
+                          Giảm {discountPercent}%
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
 

@@ -101,7 +101,10 @@ app.post('/api/upload', authenticateToken, requireAdmin, upload.single('image'),
 // Handle multer errors
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'File quá lớn (tối đa 5MB)' })
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      const isFileUpload = req.path === '/api/upload-file'
+      return res.status(400).json({ error: `File quá lớn (tối đa ${isFileUpload ? '20' : '5'}MB)` })
+    }
     return res.status(400).json({ error: `Lỗi upload: ${err.message}` })
   }
   if (err.message?.includes('Chỉ chấp nhận')) return res.status(400).json({ error: err.message })

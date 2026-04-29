@@ -144,6 +144,25 @@ export function prefetchPublicData() {
 }
 
 // ============================================
+// USER PURCHASES (requires auth)
+// ============================================
+
+/**
+ * Fetch user's purchased course IDs and book IDs
+ * Returns { courseIds: string[], bookIds: string[] }
+ */
+export async function fetchMyPurchases() {
+  const [courses, books] = await Promise.all([
+    apiFetch('/my-courses').catch(() => []),
+    apiFetch('/my-books').catch(() => []),
+  ])
+  return {
+    courseIds: (courses || []).map(c => c.id),
+    bookIds: (books || []).map(b => b.id),
+  }
+}
+
+// ============================================
 // EXAM APIs (not cached — mutations)
 // ============================================
 

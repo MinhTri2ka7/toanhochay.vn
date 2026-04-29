@@ -94,20 +94,9 @@ export default function AdminSettings() {
                      className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
             </div>
             <div className="border-t border-gray-100 pt-3 mt-3">
-              <p className="text-xs font-semibold text-gray-500 mb-2">3 ô thống kê nhỏ</p>
-              <div className="grid grid-cols-2 gap-2">
-                {[1,2,3].map(n => (
-                  <div key={n} className="contents">
-                    <input type="text" value={settings[`stat_${n}_value`] || ''} onChange={e => update(`stat_${n}_value`, e.target.value)}
-                           placeholder={n===1?'170K+':n===2?'#1':'8+'}
-                           className="h-9 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
-                    <input type="text" value={settings[`stat_${n}_label`] || ''} onChange={e => update(`stat_${n}_label`, e.target.value)}
-                           placeholder={n===1?'Học sinh':n===2?'Livestream':'Năm KN'}
-                           className="h-9 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-gray-400 mt-1">Mỗi hàng: Giá trị | Nhãn</p>
+              <p className="text-xs text-gray-400">
+                💡 Các ô thống kê (Học sinh, Livestream, Năm KN...) được quản lý tại <strong className="text-brand-600">Trang giới thiệu</strong> để đảm bảo đồng bộ trên toàn bộ website.
+              </p>
             </div>
           </div>
         </div>
