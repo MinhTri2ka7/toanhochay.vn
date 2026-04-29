@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, X, Trash2, FileText, Edit, ExternalLink } from 'lucide-react'
 import FileUpload from '../../components/FileUpload'
 
-const emptyDoc = { title: '', description: '', file_url: '', file_type: 'PDF', pages: 0, category: 'general', status: 'active' }
+const emptyDoc = { title: '', description: '', file_url: '', file_type: 'PDF', pages: 0, category: 'general', status: 'active', price: 0 }
 
 export default function AdminDocuments() {
   const [docs, setDocs] = useState([])
@@ -32,7 +32,7 @@ export default function AdminDocuments() {
     setForm({
       title: doc.title, description: doc.description || '', file_url: doc.file_url || '',
       file_type: doc.file_type || 'PDF', pages: doc.pages || 0, category: doc.category || 'general',
-      status: doc.status || 'active',
+      status: doc.status || 'active', price: doc.price || 0,
     })
     setError(''); setShowModal(true)
   }
@@ -76,6 +76,7 @@ export default function AdminDocuments() {
               <th className="text-left px-4 py-3 font-semibold">Tiêu đề</th>
               <th className="text-left px-4 py-3 font-semibold">Loại</th>
               <th className="text-left px-4 py-3 font-semibold">Danh mục</th>
+              <th className="text-center px-4 py-3 font-semibold">Giá</th>
               <th className="text-center px-4 py-3 font-semibold">Trang</th>
               <th className="text-center px-4 py-3 font-semibold">Lượt tải</th>
               <th className="text-center px-4 py-3 font-semibold">Trạng thái</th>
@@ -101,6 +102,13 @@ export default function AdminDocuments() {
                   <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 text-red-600">{doc.file_type}</span>
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500">{doc.category}</td>
+                <td className="px-4 py-3 text-center">
+                  {(!doc.price || doc.price === 0) ? (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Free</span>
+                  ) : (
+                    <span className="text-xs font-bold text-brand-700">{Number(doc.price).toLocaleString('vi-VN')}đ</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-center text-xs">{doc.pages}</td>
                 <td className="px-4 py-3 text-center text-xs font-semibold text-brand-700">{doc.downloads?.toLocaleString()}</td>
                 <td className="px-4 py-3 text-center">
@@ -127,7 +135,7 @@ export default function AdminDocuments() {
               </tr>
             ))}
             {docs.length === 0 && (
-              <tr><td colSpan={8} className="text-center text-gray-400 py-12">Chưa có tài liệu nào</td></tr>
+              <tr><td colSpan={9} className="text-center text-gray-400 py-12">Chưa có tài liệu nào</td></tr>
             )}
           </tbody>
         </table>
@@ -197,6 +205,16 @@ export default function AdminDocuments() {
                 <input type="text" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                        placeholder="VD: Chuyên đề, Đề cương, Bài tập..."
                        className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Giá bán</label>
+                <div className="flex items-center gap-2">
+                  <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: +e.target.value }))}
+                         min="0" step="1000" placeholder="0 = Miễn phí"
+                         className="flex-1 h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
+                  <span className="text-sm text-gray-400 shrink-0">đ</span>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">Để 0 hoặc trống = tài liệu miễn phí</p>
               </div>
               <button type="submit" disabled={saving}
                       className="w-full h-10 rounded-xl font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors">

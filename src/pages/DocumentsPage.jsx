@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { FileText, Download, Eye, FolderOpen, Loader2 } from 'lucide-react'
+import { FileText, Download, Eye, FolderOpen, Loader2, Lock } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
-import { fetchDocuments, trackDocumentDownload } from '../lib/api'
+import { fetchDocuments, trackDocumentDownload, formatPrice } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   useEffect(() => {
     fetchDocuments()
@@ -42,7 +44,7 @@ export default function DocumentsPage() {
           </div>
           <p className="font-semibold text-brand-900"
              style={{ fontFamily: 'var(--font-heading)' }}>
-            Tài liệu miễn phí
+            Tài liệu
           </p>
           <div className="flex-1" />
           <span className="text-xs text-gray-400 font-medium">{documents.length} tài liệu</span>
@@ -69,7 +71,7 @@ export default function DocumentsPage() {
                   <h3 className="font-semibold text-sm lg:text-base line-clamp-1">
                     {doc.title}
                   </h3>
-                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-1 flex-wrap">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md
                                      bg-red-50 text-red-500 font-semibold">
                       {doc.file_type}
@@ -81,14 +83,25 @@ export default function DocumentsPage() {
                     {doc.category && doc.category !== 'general' && (
                       <span className="px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 font-medium">{doc.category}</span>
                     )}
+                    {/* Price badge */}
+                    {(!doc.price || doc.price === 0) ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">Free</span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 font-bold">{formatPrice(doc.price)}đ</span>
+                    )}
                   </div>
                 </div>
-                <button className="shrink-0 h-9 px-4 rounded-xl text-sm font-semibold
-                                   bg-brand-600 text-white
-                                   shadow-sm
-                                   transition-all duration-200 flex items-center gap-1"
+                <button className={`shrink-0 h-9 px-4 rounded-xl text-sm font-semibold
+                                   shadow-sm transition-all duration-200 flex items-center gap-1
+                                   ${(doc.price > 0)
+                                     ? 'bg-brand-100 text-brand-700 hover:bg-brand-200'
+                                     : 'bg-brand-600 text-white'}`}
                         onClick={e => { e.stopPropagation(); handleView(doc) }}>
-                  <Eye size={15} /> Xem
+                  {(doc.price > 0) ? (
+                    <><Lock size={13} /> {formatPrice(doc.price)}đ</>
+                  ) : (
+                    <><Eye size={15} /> Xem</>
+                  )}
                 </button>
               </div>
             </ScrollReveal>

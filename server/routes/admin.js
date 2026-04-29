@@ -572,13 +572,14 @@ router.get('/documents', async (req, res) => {
 
 router.post('/documents', async (req, res) => {
   try {
-    const { title, description, file_url, file_type, pages, category, status } = req.body
+    const { title, description, file_url, file_type, pages, category, status, price } = req.body
     if (!title) return res.status(400).json({ error: 'Tiêu đề không được để trống' })
     const count = await db.count('documents')
     await db.insert('documents', {
       title, description: description || '', file_url: file_url || '',
       file_type: file_type || 'PDF', pages: pages || 0,
       category: category || 'general', status: status || 'active', sort_order: count + 1,
+      price: price || 0,
     })
     res.status(201).json({ message: 'Thêm tài liệu thành công' })
   } catch (err) {
@@ -588,12 +589,13 @@ router.post('/documents', async (req, res) => {
 
 router.put('/documents/:id', async (req, res) => {
   try {
-    const { title, description, file_url, file_type, pages, category, status } = req.body
+    const { title, description, file_url, file_type, pages, category, status, price } = req.body
     if (!title) return res.status(400).json({ error: 'Tiêu đề không được để trống' })
     await db.update('documents', {
       title, description: description || '', file_url: file_url || '',
       file_type: file_type || 'PDF', pages: pages || 0,
       category: category || 'general', status: status || 'active',
+      price: price || 0,
     }, { id: parseInt(req.params.id) })
     res.json({ message: 'Cập nhật thành công' })
   } catch (err) {

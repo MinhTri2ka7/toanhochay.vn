@@ -174,12 +174,22 @@ export default function AboutPage() {
 
         <div className="relative max-w-3xl mx-auto">
           {/* Timeline line */}
-          <div className="absolute left-6 lg:left-1/2 lg:-translate-x-px top-0 bottom-0 w-0.5
-                          bg-brand-400" />
+          <div className="absolute left-6 lg:left-1/2 lg:-translate-x-px top-0 bottom-0 w-0.5"
+               style={{ background: 'linear-gradient(180deg, #f59e0b, #14b8a6, #3b82f6, #f43f5e, #a855f7, #f59e0b)' }} />
 
           {timeline.map((item, i) => {
             const isLeft = i % 2 === 0
             const TimeIcon = timelineIcons[i % timelineIcons.length]
+
+            // Alternating color themes
+            const colorThemes = [
+              { bg: 'bg-amber-50',   border: 'border-amber-400',  dot: 'bg-amber-100',   icon: 'text-amber-600',  badge: 'bg-amber-100 text-amber-700',  line: 'bg-amber-400' },
+              { bg: 'bg-teal-50',    border: 'border-teal-400',   dot: 'bg-teal-100',    icon: 'text-teal-600',   badge: 'bg-teal-100 text-teal-700',    line: 'bg-teal-400' },
+              { bg: 'bg-blue-50',    border: 'border-blue-400',   dot: 'bg-blue-100',    icon: 'text-blue-600',   badge: 'bg-blue-100 text-blue-700',    line: 'bg-blue-400' },
+              { bg: 'bg-rose-50',    border: 'border-rose-400',   dot: 'bg-rose-100',    icon: 'text-rose-600',   badge: 'bg-rose-100 text-rose-700',    line: 'bg-rose-400' },
+              { bg: 'bg-purple-50',  border: 'border-purple-400', dot: 'bg-purple-100',  icon: 'text-purple-600', badge: 'bg-purple-100 text-purple-700', line: 'bg-purple-400' },
+            ]
+            const theme = colorThemes[i % colorThemes.length]
 
             return (
               <ScrollReveal key={i} delay={i * 120} direction={isLeft ? 'left' : 'right'}>
@@ -187,20 +197,21 @@ export default function AboutPage() {
                                  lg:${isLeft ? 'flex-row' : 'flex-row-reverse'}
                                  lg:gap-12`}>
                   {/* Timeline dot */}
-                  <div className="absolute left-6 lg:left-1/2 -translate-x-1/2 z-10
-                                  w-12 h-12 rounded-full bg-white shadow-card
+                  <div className={`absolute left-6 lg:left-1/2 -translate-x-1/2 z-10
+                                  w-12 h-12 rounded-full ${theme.dot} shadow-card
                                   flex items-center justify-center
-                                  border-2 border-brand-400">
-                    <TimeIcon size={20} className="text-brand-600" />
+                                  border-2 ${theme.border}`}>
+                    <TimeIcon size={20} className={theme.icon} />
                   </div>
 
                   {/* Content */}
                   <div className={`ml-20 lg:ml-0 lg:w-[calc(50%-3rem)]
                                    ${isLeft ? 'lg:text-right lg:pr-0' : 'lg:text-left lg:ml-auto lg:pl-0'}`}>
-                    <div className="bg-white rounded-2xl shadow-card p-5
-                                    transition-all duration-300">
-                      <span className="inline-block text-xs font-bold text-brand-600
-                                       bg-brand-100 px-2.5 py-0.5 rounded-full mb-2">
+                    <div className={`${theme.bg} rounded-2xl shadow-card p-5
+                                    border border-transparent hover:border-current/10
+                                    transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5`}>
+                      <span className={`inline-block text-xs font-bold
+                                       ${theme.badge} px-2.5 py-0.5 rounded-full mb-2`}>
                         {item.year}
                       </span>
                       <h3 className="font-bold text-brand-900 text-base"
