@@ -175,19 +175,16 @@ export default function AboutPage() {
         <div className="relative max-w-3xl mx-auto">
           {/* Timeline line */}
           <div className="absolute left-6 lg:left-1/2 lg:-translate-x-px top-0 bottom-0 w-0.5"
-               style={{ background: 'linear-gradient(180deg, #f59e0b, #14b8a6, #3b82f6, #f43f5e, #a855f7, #f59e0b)' }} />
+               style={{ background: 'linear-gradient(180deg, #FFD074, #FFB018, #E09500, #FFB018, #FFD074)' }} />
 
           {timeline.map((item, i) => {
             const isLeft = i % 2 === 0
             const TimeIcon = timelineIcons[i % timelineIcons.length]
 
-            // Alternating color themes
+            // Alternating color themes — white & gold
             const colorThemes = [
-              { bg: 'bg-amber-50',   border: 'border-amber-400',  dot: 'bg-amber-100',   icon: 'text-amber-600',  badge: 'bg-amber-100 text-amber-700',  line: 'bg-amber-400' },
-              { bg: 'bg-teal-50',    border: 'border-teal-400',   dot: 'bg-teal-100',    icon: 'text-teal-600',   badge: 'bg-teal-100 text-teal-700',    line: 'bg-teal-400' },
-              { bg: 'bg-blue-50',    border: 'border-blue-400',   dot: 'bg-blue-100',    icon: 'text-blue-600',   badge: 'bg-blue-100 text-blue-700',    line: 'bg-blue-400' },
-              { bg: 'bg-rose-50',    border: 'border-rose-400',   dot: 'bg-rose-100',    icon: 'text-rose-600',   badge: 'bg-rose-100 text-rose-700',    line: 'bg-rose-400' },
-              { bg: 'bg-purple-50',  border: 'border-purple-400', dot: 'bg-purple-100',  icon: 'text-purple-600', badge: 'bg-purple-100 text-purple-700', line: 'bg-purple-400' },
+              { bg: 'bg-white',      border: 'border-brand-400', dot: 'bg-white',       icon: 'text-brand-600', badge: 'bg-brand-100 text-brand-700' },
+              { bg: 'bg-brand-50',   border: 'border-brand-500', dot: 'bg-brand-100',   icon: 'text-brand-700', badge: 'bg-brand-500 text-white' },
             ]
             const theme = colorThemes[i % colorThemes.length]
 
