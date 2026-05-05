@@ -234,12 +234,14 @@ export default function ExamTakingPage() {
                 <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-brand-400" /></div>
               ) : leaderboard.length > 0 ? (
                 <div className="space-y-1.5">
-                  {leaderboard.map((entry) => {
+                  {leaderboard.map((entry, idx) => {
                     const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : null
+                    const rowBg = entry.isMe
+                      ? 'bg-amber-50 border border-amber-200 ring-1 ring-amber-300'
+                      : idx % 2 === 0 ? 'bg-white' : 'bg-brand-50'
                     return (
                       <div key={entry.rank}
-                           className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all
-                             ${entry.isMe ? 'bg-amber-50 border border-amber-200 ring-1 ring-amber-300' : 'hover:bg-gray-50'}`}>
+                           className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${rowBg}`}>
                         <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
                           ${entry.rank <= 3 ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500'}`}>
                           {medal || entry.rank}
@@ -423,12 +425,14 @@ export default function ExamTakingPage() {
 
                 {results.leaderboard?.length > 0 ? (
                   <div className="space-y-1.5">
-                    {results.leaderboard.map((entry) => {
+                    {results.leaderboard.map((entry, idx) => {
                       const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : null
+                      const rowBg = entry.isMe
+                        ? 'bg-amber-50 border border-amber-200 ring-1 ring-amber-300'
+                        : idx % 2 === 0 ? 'bg-white' : 'bg-brand-50'
                       return (
                         <div key={entry.rank}
-                             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all
-                               ${entry.isMe ? 'bg-amber-50 border border-amber-200 ring-1 ring-amber-300' : 'hover:bg-gray-50'}`}>
+                             className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all ${rowBg}`}>
                           {/* Rank */}
                           <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
                             ${entry.rank <= 3 ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500'}`}>
