@@ -11,7 +11,7 @@ export default function Footer() {
 
   return (
     <footer className="relative mt-12 overflow-hidden"
-            style={{ background: 'linear-gradient(180deg, #FFCE54 0%, #F6B93B 40%, #F0A020 80%, #E8921A 100%)' }}>
+            style={{ background: 'linear-gradient(180deg, #FFD966 0%, #FFC940 40%, #FFB830 80%, #F5A623 100%)' }}>
       {/* Decorative top wave */}
       <div className="absolute top-0 left-0 right-0 h-2"
            style={{ background: 'linear-gradient(90deg, #F5A623, #FFCE54, #FF9F43, #FFCE54, #F5A623)' }} />
