@@ -136,7 +136,7 @@ export default function CheckoutPage() {
                   <div className="space-y-2 text-sm">
                     <p><span className="text-gray-500">Ngân hàng:</span> <strong>{settings.bank_name || 'MB Bank'}</strong></p>
                     <p><span className="text-gray-500">Số TK:</span> <strong>{settings.bank_account || settings.phone || '0984511618'}</strong></p>
-                    <p><span className="text-gray-500">Chủ TK:</span> <strong>{settings.bank_owner || 'Thầy Nam'}</strong></p>
+                    <p><span className="text-gray-500">Chủ TK:</span> <strong>{settings.bank_holder || settings.bank_owner || 'Thầy Nam'}</strong></p>
                     <p><span className="text-gray-500">Số tiền:</span> <strong className="text-red-600">{formatPrice(order.totalAmount)}đ</strong></p>
                     <p><span className="text-gray-500">Nội dung CK:</span> <strong className="text-brand-700">{order.paymentCode}</strong></p>
                   </div>
