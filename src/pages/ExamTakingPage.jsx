@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Clock, CheckCircle, XCircle, ArrowLeft, Send, Loader2, Lock, MinusCircle } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, ArrowLeft, Send, Loader2, Lock, MinusCircle, Trophy, Play, FileText, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import ScrollReveal from '../components/ScrollReveal'
 
@@ -18,8 +18,11 @@ export default function ExamTakingPage() {
   const [passcodeInput, setPasscodeInput] = useState('')
   const [passcodeError, setPasscodeError] = useState('')
   const [passcodeVerified, setPasscodeVerified] = useState(false)
+  const [started, setStarted] = useState(false)
+  const [leaderboard, setLeaderboard] = useState([])
+  const [lbLoading, setLbLoading] = useState(true)
 
-  // Load exam
+  // Load exam + leaderboard
   useEffect(() => {
     async function loadExam() {
       try {
@@ -34,12 +37,24 @@ export default function ExamTakingPage() {
         setLoading(false)
       }
     }
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch(`/api/exams/${id}/leaderboard`, { credentials: 'include' })
+        const data = await res.json()
+        if (res.ok) setLeaderboard(data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLbLoading(false)
+      }
+    }
     loadExam()
+    loadLeaderboard()
   }, [id])
 
   // Countdown timer
   useEffect(() => {
-    if (submitted || timeLeft <= 0 || !exam) return
+    if (!started || submitted || timeLeft <= 0 || !exam) return
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -50,7 +65,7 @@ export default function ExamTakingPage() {
       })
     }, 1000)
     return () => clearInterval(timer)
-  }, [submitted, timeLeft, exam])
+  }, [started, submitted, timeLeft, exam])
 
   function selectAnswer(questionId, answer) {
     if (submitted) return
@@ -171,6 +186,101 @@ export default function ExamTakingPage() {
     )
   }
 
+  // Intro view — show leaderboard before starting
+  if (!started && !submitted) {
+    const diffConfig = {
+      'easy': { bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Dễ' },
+      'medium': { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Trung bình' },
+      'hard': { bg: 'bg-orange-50', text: 'text-orange-700', label: 'Khó' },
+      'very_hard': { bg: 'bg-red-50', text: 'text-red-700', label: 'Rất khó' },
+    }
+    const dc = diffConfig[exam.difficulty] || diffConfig['medium']
+    return (
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Exam Info Card */}
+          <ScrollReveal>
+            <div className="bg-white rounded-3xl shadow-section p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-brand-100 flex items-center justify-center mx-auto mb-4">
+                <FileText size={28} className="text-brand-700" />
+              </div>
+              <h1 className="text-xl lg:text-2xl font-bold text-brand-900 mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
+                {exam.title}
+              </h1>
+              <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mb-6 flex-wrap">
+                <span className="flex items-center gap-1.5"><Clock size={15} /> {exam.duration} phút</span>
+                <span className="flex items-center gap-1.5"><FileText size={15} /> {exam.total_questions || exam.questions?.length || 0} câu</span>
+                <span className={`px-2.5 py-1 rounded-full font-semibold text-xs ${dc.bg} ${dc.text}`}>{dc.label}</span>
+              </div>
+              {exam.points_wrong > 0 && (
+                <p className="text-xs text-red-500 mb-4">⚠️ Sai trừ {exam.points_wrong} điểm</p>
+              )}
+              <button onClick={() => setStarted(true)}
+                      className="inline-flex items-center gap-2 h-12 px-8 rounded-2xl font-bold text-base
+                                 bg-brand-600 text-white shadow-lg hover:shadow-xl
+                                 transition-all duration-300 hover:scale-[1.02]">
+                <Play size={20} /> Bắt đầu làm bài
+              </button>
+            </div>
+          </ScrollReveal>
+
+          {/* Leaderboard */}
+          <ScrollReveal delay={150}>
+            <div className="bg-white rounded-3xl shadow-section p-6">
+              <h2 className="text-base font-bold text-brand-900 mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-heading)' }}>
+                <Trophy size={18} className="text-amber-500" /> Bảng xếp hạng
+              </h2>
+              {lbLoading ? (
+                <div className="flex justify-center py-8"><Loader2 size={24} className="animate-spin text-brand-400" /></div>
+              ) : leaderboard.length > 0 ? (
+                <div className="space-y-1.5">
+                  {leaderboard.map((entry) => {
+                    const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : null
+                    return (
+                      <div key={entry.rank}
+                           className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all
+                             ${entry.isMe ? 'bg-amber-50 border border-amber-200 ring-1 ring-amber-300' : 'hover:bg-gray-50'}`}>
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0
+                          ${entry.rank <= 3 ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {medal || entry.rank}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-semibold text-sm truncate ${entry.isMe ? 'text-amber-800' : 'text-gray-800'}`}>
+                            {entry.name} {entry.isMe && <span className="text-[10px] text-amber-500">(Bạn)</span>}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            {entry.correctCount}/{entry.totalQuestions} đúng
+                            {entry.timeSpent > 0 && ` • ${Math.floor(entry.timeSpent / 60)}p${entry.timeSpent % 60}s`}
+                          </p>
+                        </div>
+                        <span className={`font-bold text-sm shrink-0 ${entry.rank <= 3 ? 'text-brand-700' : 'text-gray-600'}`}>
+                          {entry.score}đ
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  <Users size={28} className="mx-auto mb-2 text-gray-300" />
+                  <p>Chưa có ai thi — Hãy là người đầu tiên!</p>
+                </div>
+              )}
+            </div>
+          </ScrollReveal>
+
+          {/* Back button */}
+          <div className="text-center">
+            <button onClick={() => navigate('/de-thi')}
+                    className="text-sm text-gray-400 hover:text-brand-600 transition-colors">
+              ← Quay lại danh sách đề
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Results view with score + leaderboard
   if (submitted && results) {
     const pct = results.maxScore > 0 ? Math.round((results.score / results.maxScore) * 100) : 0
@@ -240,7 +350,7 @@ export default function ExamTakingPage() {
                                      bg-brand-600 text-white transition-all text-sm">
                     <ArrowLeft size={16} /> Danh sách đề
                   </button>
-                  <button onClick={() => { setSubmitted(false); setResults(null); setAnswers({}); setTimeLeft(exam.duration * 60) }}
+                  <button onClick={() => { setSubmitted(false); setResults(null); setAnswers({}); setTimeLeft(exam.duration * 60); setStarted(false) }}
                           className="inline-flex items-center gap-2 h-10 px-5 rounded-xl font-semibold
                                      border border-brand-300 text-brand-700 transition-all text-sm hover:bg-brand-50">
                     Thi lại
