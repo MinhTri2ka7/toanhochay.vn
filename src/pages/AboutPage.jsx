@@ -38,20 +38,21 @@ function useCountUp(end, duration = 2000, startOnView = true) {
   return { count, ref }
 }
 
-function AnimatedStat({ icon: Icon, label, value, suffix = '', delay = 0 }) {
+function AnimatedStat({ icon: Icon, label, value, suffix = '', delay = 0, index = 0 }) {
   const numericValue = parseInt(value.replace(/[^0-9]/g, ''))
   const prefix = value.startsWith('#') ? '#' : ''
   const { count, ref } = useCountUp(numericValue, 2000)
+  const isAlt = index % 2 === 1
 
   return (
     <ScrollReveal delay={delay}>
       <div ref={ref}
-           className="bg-white rounded-2xl lg:rounded-3xl shadow-card p-6 text-center
+           className={`${isAlt ? 'bg-brand-50' : 'bg-white'} rounded-2xl lg:rounded-3xl shadow-card p-6 text-center
                       transition-all duration-300
-                      cursor-default">
-        <div className="w-14 h-14 rounded-2xl bg-brand-100
+                      cursor-default`}>
+        <div className={`w-14 h-14 rounded-2xl ${isAlt ? 'bg-brand-200/60' : 'bg-brand-100'}
                         flex items-center justify-center mx-auto mb-3
-                        transition-all duration-300">
+                        transition-all duration-300`}>
           <Icon size={26} className="text-brand-700" />
         </div>
         <p className="text-3xl lg:text-4xl font-bold text-brand-900 counter-animate"
@@ -155,7 +156,7 @@ export default function AboutPage() {
       <div className="mx-4 md:mx-16 xl:mx-[10%] -mt-6 relative z-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {stats.map((s, i) => (
-            <AnimatedStat key={i} icon={s.icon} label={s.label} value={s.value} suffix={s.suffix} delay={i * 100} />
+            <AnimatedStat key={i} icon={s.icon} label={s.label} value={s.value} suffix={s.suffix} delay={i * 100} index={i} />
           ))}
         </div>
       </div>
