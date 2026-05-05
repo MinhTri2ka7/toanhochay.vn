@@ -11,16 +11,16 @@ export default function Footer() {
 
   return (
     <footer className="relative mt-12 overflow-hidden"
-            style={{ background: 'linear-gradient(180deg, #F6C044 0%, #E8A520 40%, #D4920A 80%, #C07E00 100%)' }}>
+            style={{ background: 'linear-gradient(180deg, #FFCE54 0%, #F6B93B 40%, #F0A020 80%, #E8921A 100%)' }}>
       {/* Decorative top wave */}
       <div className="absolute top-0 left-0 right-0 h-2"
-           style={{ background: 'linear-gradient(90deg, #B87400, #E09500, #FB923C, #E09500, #B87400)' }} />
+           style={{ background: 'linear-gradient(90deg, #F5A623, #FFCE54, #FF9F43, #FFCE54, #F5A623)' }} />
 
       {/* Subtle decorative blobs */}
-      <div className="absolute top-16 -left-20 w-64 h-64 rounded-full opacity-25 blur-3xl"
-           style={{ background: 'radial-gradient(circle, #FFD866 0%, transparent 70%)' }} />
-      <div className="absolute bottom-10 -right-16 w-52 h-52 rounded-full opacity-20 blur-3xl"
-           style={{ background: 'radial-gradient(circle, #FFA500 0%, transparent 70%)' }} />
+      <div className="absolute top-16 -left-20 w-64 h-64 rounded-full opacity-30 blur-3xl"
+           style={{ background: 'radial-gradient(circle, #FFE89A 0%, transparent 70%)' }} />
+      <div className="absolute bottom-10 -right-16 w-52 h-52 rounded-full opacity-25 blur-3xl"
+           style={{ background: 'radial-gradient(circle, #FFB347 0%, transparent 70%)' }} />
 
       <div className="max-w-6xl mx-auto px-6 pt-12 pb-6 relative">
         {/* Top CTA Banner */}
