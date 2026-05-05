@@ -259,7 +259,7 @@ export default function HomePage() {
                       style={{ fontFamily: 'var(--font-heading)' }}>
                     {settings.hero_title || 'Chinh phục Toán học'}
                     <br />
-                    <span className="text-gradient">{settings.hero_subtitle || 'cùng Thầy Tuấn'}</span>
+                    <span className="text-gradient">{settings.hero_subtitle || 'cùng Thầy Nam'}</span>
                   </h1>
                   <p className="text-sm lg:text-base text-gray-500 mt-3 leading-relaxed max-w-md">
                     {settings.site_description || 'Hệ thống khóa học từ lớp 10 đến 12, thiết kế khoa học, giúp bạn đạt điểm cao trong mọi kỳ thi.'}

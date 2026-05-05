@@ -90,7 +90,7 @@ export default function AdminSettings() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tiêu đề phụ (dòng 2, màu vàng)</label>
               <input type="text" value={settings.hero_subtitle || ''} onChange={e => update('hero_subtitle', e.target.value)}
-                     placeholder="cùng Thầy Tuấn"
+                     placeholder="cùng Thầy Nam"
                      className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
             </div>
             <div className="border-t border-gray-100 pt-3 mt-3">

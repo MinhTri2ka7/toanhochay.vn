@@ -128,7 +128,7 @@ export default function AdminAbout() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tên giáo viên</label>
               <input type="text" value={settings.about_teacher_name || ''} onChange={e => update('about_teacher_name', e.target.value)}
-                     placeholder="Thầy Tuấn"
+                     placeholder="Thầy Nam"
                      className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none" />
             </div>
             <div>

@@ -85,7 +85,7 @@ export default function AboutPage() {
   } catch {}
 
   // Read content from settings with defaults
-  const teacherName = settings.about_teacher_name || 'Thầy Tuấn'
+  const teacherName = settings.about_teacher_name || 'Thầy Nam'
   const teacherTitle = settings.about_teacher_title || 'Chuyên luyện thi Toán lớp 1 - 6, TIMO, SASMO'
   const teacherBio = settings.about_teacher_bio || 'Nhiều năm kinh nghiệm luyện thi Toán quốc tế (TIMO, SASMO, IKMC, FMO). Đã giúp hàng trăm học sinh đạt giải Perfect Scorer, Gold Award trong các kỳ thi Toán quốc tế. Chuyên dạy Toán tư duy cho học sinh lớp 1 đến lớp 6.'
   const badge = settings.about_badge || 'Thủ khoa ĐH'
