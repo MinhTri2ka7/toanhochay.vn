@@ -120,40 +120,159 @@ app.use('/api', orderRoutes)
 app.use('/api/admin', adminRoutes)
 
 
-// SePay webhook (public - no auth required)
+// ============================================
+// SEPAY WEBHOOK — Auto payment verification
+// Docs: https://docs.sepay.vn/tich-hop-webhooks.html
+// ============================================
 app.post('/api/webhook/sepay', async (req, res) => {
   try {
-    const { transferAmount, description, transactionId } = req.body
-    if (!description || !transferAmount) return res.status(400).json({ error: 'Missing data' })
-
-    const { data: order, error: orderErr } = await db.supabase
-      .from('orders').select('*')
-      .eq('payment_code', description.trim())
-      .eq('status', 'pending')
-      .maybeSingle()
-    if (orderErr) throw orderErr
-    if (!order) return res.status(404).json({ error: 'Order not found' })
-
-    if (transferAmount >= order.total_amount) {
-      await db.update('orders', { status: 'paid', updated_at: new Date().toISOString() }, { id: order.id })
-      await db.insert('payments', {
-        order_id: order.id, method: 'sepay', amount: transferAmount,
-        transaction_id: transactionId, status: 'completed', raw_data: req.body,
-      })
-
-      const items = await db.selectAll('order_items', { where: { order_id: order.id } })
-      for (const item of items) {
-        if (item.product_type === 'course' || item.product_type === 'combo') {
-          try {
-            await db.upsert('user_courses', { user_id: order.user_id, course_id: item.product_id }, { onConflict: 'user_id, course_id' })
-          } catch (e) { /* ignore */ }
-        }
+    // 1. API Key authentication (optional but recommended)
+    const sepayApiKey = process.env.SEPAY_API_KEY
+    if (sepayApiKey) {
+      const authHeader = req.headers['authorization'] || ''
+      const providedKey = authHeader.replace(/^Apikey\s+/i, '').trim()
+      if (providedKey !== sepayApiKey) {
+        console.warn('SePay webhook: Invalid API Key')
+        return res.status(401).json({ success: false, message: 'Unauthorized' })
       }
     }
+
+    // 2. Extract SePay webhook fields (official format)
+    const {
+      id: sepayId,          // ID giao dịch trên SePay (dùng để chống trùng)
+      gateway,              // Tên ngân hàng (Vietcombank, MB, ...)
+      transactionDate,      // Thời gian giao dịch
+      accountNumber,        // Số tài khoản ngân hàng
+      code,                 // Mã thanh toán (SePay tự nhận diện)
+      content,              // Nội dung chuyển khoản
+      transferType,         // "in" = tiền vào, "out" = tiền ra
+      transferAmount,       // Số tiền giao dịch
+      accumulated,          // Số dư lũy kế
+      subAccount,           // Tài khoản phụ (VA)
+      referenceCode,        // Mã tham chiếu SMS
+      description,          // Toàn bộ nội dung SMS
+    } = req.body
+
+    // Only process incoming transfers
+    if (transferType === 'out') {
+      return res.json({ success: true, message: 'Outgoing transfer ignored' })
+    }
+
+    if (!transferAmount || transferAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid transfer amount' })
+    }
+
+    // 3. Deduplication: check if this SePay transaction was already processed
+    if (sepayId) {
+      const existing = await db.selectOne('payments', { sepay_transaction_id: sepayId })
+      if (existing) {
+        console.log(`SePay webhook: Duplicate transaction ${sepayId}, skipping`)
+        return res.json({ success: true, message: 'Already processed' })
+      }
+    }
+
+    // 4. Find matching pending order
+    // Strategy: try `code` first (SePay auto-detected), then search `content`
+    let order = null
+
+    if (code) {
+      // SePay recognized a payment code — direct match
+      const { data, error } = await db.supabase
+        .from('orders').select('*')
+        .eq('payment_code', code.trim().toUpperCase())
+        .eq('status', 'pending')
+        .maybeSingle()
+      if (error) throw error
+      order = data
+    }
+
+    if (!order && content) {
+      // Fallback: search for payment_code pattern inside transfer content
+      // Our payment codes start with "TT" (e.g., TT1MG2K5XP)
+      const contentUpper = content.toUpperCase().replace(/\s+/g, '')
+      const { data: pendingOrders, error } = await db.supabase
+        .from('orders').select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(50)
+      if (error) throw error
+
+      if (pendingOrders) {
+        order = pendingOrders.find(o =>
+          o.payment_code && contentUpper.includes(o.payment_code.toUpperCase())
+        )
+      }
+    }
+
+    if (!order) {
+      // Not an error — could be a non-order transfer
+      console.log(`SePay webhook: No matching order for code=${code}, content=${content}`)
+      return res.json({ success: true, message: 'No matching order' })
+    }
+
+    // 5. Verify amount and update order
+    if (transferAmount >= order.total_amount) {
+      // Update order status to paid
+      await db.update('orders', {
+        status: 'paid',
+        updated_at: new Date().toISOString(),
+      }, { id: order.id })
+
+      // Record payment with dedup ID
+      await db.insert('payments', {
+        order_id: order.id,
+        method: 'sepay',
+        amount: transferAmount,
+        transaction_id: referenceCode || String(sepayId || ''),
+        sepay_transaction_id: sepayId || null,
+        status: 'completed',
+        raw_data: req.body,
+      })
+
+      // Auto-activate courses/combos for the user
+      const items = await db.selectAll('order_items', { where: { order_id: order.id } })
+      for (const item of items) {
+        if (item.product_type === 'course') {
+          try {
+            await db.upsert('user_courses', {
+              user_id: order.user_id,
+              course_id: item.product_id,
+            }, { onConflict: 'user_id, course_id' })
+          } catch (e) { console.error('Activate course error:', e.message) }
+        } else if (item.product_type === 'combo') {
+          // Activate all courses in the combo
+          try {
+            const comboItems = await db.selectAll('combo_items', { where: { combo_id: item.product_id } })
+            for (const ci of comboItems) {
+              await db.upsert('user_courses', {
+                user_id: order.user_id,
+                course_id: ci.course_id,
+              }, { onConflict: 'user_id, course_id' })
+            }
+          } catch (e) { console.error('Activate combo error:', e.message) }
+        }
+      }
+
+      console.log(`✅ SePay: Order #${order.id} paid — ${transferAmount.toLocaleString()}đ via ${gateway}`)
+    } else {
+      // Partial payment — record but don't activate
+      await db.insert('payments', {
+        order_id: order.id,
+        method: 'sepay',
+        amount: transferAmount,
+        transaction_id: referenceCode || String(sepayId || ''),
+        sepay_transaction_id: sepayId || null,
+        status: 'partial',
+        raw_data: req.body,
+      })
+      console.log(`⚠️ SePay: Order #${order.id} partial payment — ${transferAmount.toLocaleString()}đ / ${order.total_amount.toLocaleString()}đ`)
+    }
+
+    // SePay expects { success: true } with HTTP 200
     res.json({ success: true })
   } catch (err) {
-    console.error('Webhook error:', err)
-    res.status(500).json({ error: 'Internal error' })
+    console.error('SePay webhook error:', err)
+    res.status(500).json({ success: false, message: 'Internal error' })
   }
 })
 
