@@ -17,6 +17,7 @@ router.get('/cart', authenticateToken, async (req, res) => {
       if (ci.product_type === 'course') product = await db.selectOne('courses', { id: ci.product_id }, 'name, price, image')
       else if (ci.product_type === 'combo') product = await db.selectOne('combos', { id: ci.product_id }, 'name, price, image')
       else if (ci.product_type === 'book') product = await db.selectOne('books', { id: ci.product_id }, 'name, price, image')
+      else if (ci.product_type === 'document') product = await db.selectOne('documents', { id: ci.product_id }, 'title as name, price, image')
       return { ...ci, name: product?.name, price: product?.price, image: product?.image }
     }))
 
@@ -115,6 +116,10 @@ router.post('/orders', authenticateToken, async (req, res) => {
       if (item.product_type === 'course') product = await db.selectOne('courses', { id: item.product_id }, 'name, price')
       else if (item.product_type === 'combo') product = await db.selectOne('combos', { id: item.product_id }, 'name, price')
       else if (item.product_type === 'book') product = await db.selectOne('books', { id: item.product_id }, 'name, price')
+      else if (item.product_type === 'document') {
+        const doc = await db.selectOne('documents', { id: parseInt(item.product_id) }, 'title, price')
+        if (doc) product = { name: doc.title, price: doc.price }
+      }
       if (!product) throw new Error(`Product not found: ${item.product_id}`)
       const price = product.price * (item.quantity || 1)
       totalAmount += price

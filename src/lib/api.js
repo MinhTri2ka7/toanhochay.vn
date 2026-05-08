@@ -152,13 +152,15 @@ export function prefetchPublicData() {
  * Returns { courseIds: string[], bookIds: string[] }
  */
 export async function fetchMyPurchases() {
-  const [courses, books] = await Promise.all([
+  const [courses, books, documents] = await Promise.all([
     apiFetch('/my-courses').catch(() => []),
     apiFetch('/my-books').catch(() => []),
+    apiFetch('/my-documents').catch(() => []),
   ])
   return {
     courseIds: (courses || []).map(c => c.id),
     bookIds: (books || []).map(b => b.id),
+    documentIds: (documents || []).map(d => d.id),
   }
 }
 

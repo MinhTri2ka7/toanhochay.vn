@@ -326,7 +326,7 @@ router.get('/documents', async (req, res) => {
   try {
     const { data, error } = await db.supabase
       .from('documents')
-      .select('id, title, description, file_url, file_type, pages, downloads, category')
+      .select('id, title, description, file_url, file_type, pages, downloads, category, price')
       .eq('status', 'active')
       .order('sort_order')
     if (error) throw error
@@ -442,6 +442,27 @@ router.get('/my-courses', authenticateToken, async (req, res) => {
     }))
   } catch (err) {
     console.error('My courses error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// GET /api/my-documents — list user's purchased documents
+router.get('/my-documents', authenticateToken, async (req, res) => {
+  try {
+    const { data, error } = await db.supabase
+      .from('user_documents').select('document_id')
+      .eq('user_id', req.user.id)
+    if (error) throw error
+    if (!data?.length) return res.json([])
+
+    const docIds = data.map(ud => ud.document_id)
+    const { data: docs } = await db.supabase
+      .from('documents').select('id, title, file_url, file_type')
+      .in('id', docIds)
+
+    res.json((docs || []).map(d => ({ ...d })))
+  } catch (err) {
+    console.error('My documents error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })

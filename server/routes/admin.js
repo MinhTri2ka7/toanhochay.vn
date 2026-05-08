@@ -376,6 +376,11 @@ router.put('/orders/:id/status', async (req, res) => {
             await db.upsert('user_books', { user_id: order.user_id, book_id: item.product_id }, { onConflict: 'user_id, book_id' })
           } catch (e) { /* ignore duplicates or missing table */ }
         }
+        if (item.product_type === 'document') {
+          try {
+            await db.upsert('user_documents', { user_id: order.user_id, document_id: parseInt(item.product_id) }, { onConflict: 'user_id, document_id' })
+          } catch (e) { /* ignore duplicates or missing table */ }
+        }
       }
 
       try {
