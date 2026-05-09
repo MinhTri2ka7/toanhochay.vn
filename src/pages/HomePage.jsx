@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { BookCopy, LibraryBig, BookText, ChevronRight, ChevronDown, Sparkles, Loader2, GraduationCap, Users, Trophy, Zap, ArrowRight } from 'lucide-react'
 import CourseCard from '../components/CourseCard'
 import ImageCarousel from '../components/ImageCarousel'
+import HeroBannerSlider from '../components/HeroBannerSlider'
 import ScrollReveal from '../components/ScrollReveal'
 import { useSettings } from '../contexts/SettingsContext'
 import { fetchHomepageSections, fetchFeedbacks } from '../lib/api'
@@ -302,19 +303,24 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* Right: Banner Image */}
-            <ScrollReveal delay={100}>
-              <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden shadow-card h-full min-h-[200px]">
-                <picture>
-                  <source media="(max-width: 47.9375em)" srcSet="/banner_general/banner_general_mobile_1.png" />
-                  <source media="(min-width: 48em)" srcSet="/banner_general/banner_general_1.png" />
-                  <img
-                    alt="Banner homepage"
-                    src="/banner_general/banner_general_1.png"
-                    className="w-full h-full object-cover"
-                  />
-                </picture>
-              </div>
+            {/* Right: Hero Banner Slider */}
+            <ScrollReveal delay={100} className="h-full">
+              <HeroBannerSlider
+                images={(() => {
+                  try {
+                    const raw = settings.hero_banner_images
+                    if (raw) {
+                      const parsed = JSON.parse(raw)
+                      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+                    }
+                  } catch {}
+                  // Fallback to legacy static images
+                  return [
+                    '/banner_general/banner_general_1.png',
+                  ]
+                })()}
+                className="h-full min-h-[220px] lg:min-h-[320px]"
+              />
             </ScrollReveal>
           </div>
         </div>

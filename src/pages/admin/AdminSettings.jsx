@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Save, Loader2, Globe, Phone, Mail, MapPin, CreditCard, Image as ImageIcon } from 'lucide-react'
+import { Save, Loader2, Globe, Phone, Mail, MapPin, CreditCard, Image as ImageIcon, Plus, Trash2 } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 export default function AdminSettings() {
@@ -124,6 +124,57 @@ export default function AdminSettings() {
                   <span className="text-xs text-gray-400">Preview avatar</span>
                 </div>
               )}
+            </div>
+
+            {/* ---- Banner Slideshow Images ---- */}
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                🖼️ Ảnh banner slideshow trang chủ
+              </p>
+              <p className="text-xs text-gray-400 mb-3">Thêm nhiều ảnh — slideshow tự động chuyển mỗi 4 giây</p>
+              {/* List existing */}
+              {(() => {
+                let banners = []
+                try { banners = JSON.parse(settings.hero_banner_images || '[]') } catch {}
+                return (
+                  <div className="space-y-2 mb-3">
+                    {banners.map((url, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                        <img src={url} alt={`Banner ${idx + 1}`} className="w-14 h-10 rounded object-cover border border-gray-200 shrink-0" />
+                        <span className="flex-1 text-xs text-gray-500 truncate">{url}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = banners.filter((_, i) => i !== idx)
+                            update('hero_banner_images', JSON.stringify(updated))
+                          }}
+                          className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition-colors shrink-0"
+                          title="Xoá ảnh"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                    {banners.length === 0 && (
+                      <p className="text-xs text-gray-400 italic">Chưa có ảnh nào. Thêm ít nhất 1 ảnh bên dưới.</p>
+                    )}
+                  </div>
+                )
+              })()}
+              {/* Add new banner URL via ImageUpload */}
+              <ImageUpload
+                value=''
+                onChange={v => {
+                  if (!v) return
+                  let banners = []
+                  try { banners = JSON.parse(settings.hero_banner_images || '[]') } catch {}
+                  if (!banners.includes(v)) {
+                    update('hero_banner_images', JSON.stringify([...banners, v]))
+                  }
+                }}
+                label="Thêm ảnh banner mới"
+              />
+              <p className="text-xs text-gray-400 mt-1">Sau khi tải lên ảnh sẽ được thêm vào danh sách tự động.</p>
             </div>
           </div>
         </div>

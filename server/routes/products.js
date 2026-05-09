@@ -336,6 +336,18 @@ router.get('/documents', async (req, res) => {
   }
 })
 
+// GET /api/documents/:id — public info (no file_url for paid docs)
+router.get('/documents/:id', async (req, res) => {
+  try {
+    const doc = await db.selectOne('documents', { id: parseInt(req.params.id), status: 'active' })
+    if (!doc) return res.status(404).json({ error: 'Không tìm thấy tài liệu' })
+    // Return full info; file_url is used by guest buy page after payment
+    res.json(doc)
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 router.post('/documents/:id/download', async (req, res) => {
   try {
     await db.increment('documents', 'downloads', 1, { id: parseInt(req.params.id) })

@@ -20,6 +20,7 @@ const BooksPage = lazy(() => import('./pages/BooksPage'))
 const ExamsPage = lazy(() => import('./pages/ExamsPage'))
 const ExamTakingPage = lazy(() => import('./pages/ExamTakingPage'))
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'))
+const DocumentBuyPage = lazy(() => import('./pages/DocumentBuyPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const CartPage = lazy(() => import('./pages/CartPage'))
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
@@ -120,6 +121,7 @@ function App() {
               <Route path="/de-thi" element={<ExamsPage />} />
               <Route path="/de-thi/:id" element={<ExamTakingPage />} />
               <Route path="/tai-lieu" element={<DocumentsPage />} />
+              <Route path="/tai-lieu/:id/mua" element={<DocumentBuyPage />} />
               <Route path="/gioi-thieu" element={<AboutPage />} />
               <Route path="/gio-hang" element={<CartPage />} />
               <Route path="/kich-hoat" element={<ActivatePage />} />

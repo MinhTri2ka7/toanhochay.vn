@@ -366,6 +366,9 @@ router.put('/orders/:id/status', async (req, res) => {
       const items = await db.selectAll('order_items', { where: { order_id: parseInt(req.params.id) } })
 
       for (const item of items) {
+        // Skip ownership records for guest orders (user_id is null)
+        if (!order.user_id) continue
+
         if (item.product_type === 'course' || item.product_type === 'combo') {
           try {
             await db.upsert('user_courses', { user_id: order.user_id, course_id: item.product_id }, { onConflict: 'user_id, course_id' })

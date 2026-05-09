@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react'
-import { FileText, Download, Eye, FolderOpen, Loader2, Lock, ShoppingCart, LogIn } from 'lucide-react'
+import { FileText, Download, Eye, FolderOpen, Loader2, ShoppingCart } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ScrollReveal from '../components/ScrollReveal'
 import { fetchDocuments, trackDocumentDownload, formatPrice } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { usePurchases } from '../contexts/PurchaseContext'
-import { useCart } from '../contexts/CartContext'
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const { ownedDocumentIds } = usePurchases()
-  const { addItem } = useCart()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -22,9 +20,9 @@ export default function DocumentsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function handleView(doc) {
+  function handleAction(doc) {
     const isPaid = doc.price && doc.price > 0
-    const isOwned = ownedDocumentIds.has(String(doc.id))
+    const isOwned = user && ownedDocumentIds.has(String(doc.id))
 
     // Free document — open directly
     if (!isPaid) {
@@ -33,27 +31,15 @@ export default function DocumentsPage() {
       return
     }
 
-    // Paid document — already purchased
+    // Paid & already owned (logged in user)
     if (isOwned) {
       trackDocumentDownload(doc.id).catch(() => {})
       if (doc.file_url) window.open(doc.file_url, '_blank')
       return
     }
 
-    // Paid document — not purchased — require login then go to checkout
-    if (!user) {
-      navigate('/login?redirect=/documents')
-      return
-    }
-
-    // Add to cart and go checkout
-    addItem({
-      id: String(doc.id),
-      name: doc.title,
-      price: doc.price,
-      image: '',
-    }, 'document')
-    navigate('/checkout')
+    // Paid — navigate to buy page (no login required)
+    navigate(`/tai-lieu/${doc.id}/mua`)
   }
 
   if (loading) {
@@ -91,14 +77,14 @@ export default function DocumentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {documents.map((doc, i) => {
             const isPaid = doc.price && doc.price > 0
-            const isOwned = ownedDocumentIds.has(String(doc.id))
+            const isOwned = user && ownedDocumentIds.has(String(doc.id))
             const canView = !isPaid || isOwned
 
             return (
               <ScrollReveal key={doc.id} delay={i * 60}>
                 <div className="bg-white rounded-2xl shadow-card p-5 flex items-center gap-4
-                                transition-all duration-300 cursor-pointer"
-                     onClick={() => handleView(doc)}>
+                                transition-all duration-300 hover:shadow-card-hover cursor-pointer"
+                     onClick={() => handleAction(doc)}>
                   <div className="w-12 h-12 rounded-2xl bg-red-100
                                   flex items-center justify-center shrink-0">
                     <FileText size={22} className="text-red-600" />
@@ -131,20 +117,16 @@ export default function DocumentsPage() {
                   </div>
                   <button
                     className={`shrink-0 h-9 px-4 rounded-xl text-sm font-semibold
-                                 shadow-sm transition-all duration-200 flex items-center gap-1
+                                 shadow-sm transition-all duration-200 flex items-center gap-1.5
                                  ${canView
                                    ? 'bg-brand-600 text-white hover:bg-brand-700'
-                                   : user
-                                     ? 'bg-brand-100 text-brand-700 hover:bg-brand-200'
-                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    onClick={e => { e.stopPropagation(); handleView(doc) }}
+                                   : 'bg-amber-500 text-white hover:bg-amber-600'}`}
+                    onClick={e => { e.stopPropagation(); handleAction(doc) }}
                   >
                     {canView ? (
                       <><Eye size={15} /> Xem</>
-                    ) : !user ? (
-                      <><LogIn size={13} /> Đăng nhập</>
                     ) : (
-                      <><ShoppingCart size={13} /> {formatPrice(doc.price)}đ</>
+                      <><ShoppingCart size={13} /> Mua ngay</>
                     )}
                   </button>
                 </div>

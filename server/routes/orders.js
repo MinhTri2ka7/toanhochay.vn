@@ -213,4 +213,82 @@ router.get('/orders/:id/status', authenticateToken, async (req, res) => {
   }
 })
 
+// ============================================
+// POST /api/orders/guest-document — guest (no auth) buy a single document
+// ============================================
+router.post('/orders/guest-document', async (req, res) => {
+  try {
+    const { document_id, name, phone, email } = req.body
+    if (!document_id || !name || !phone) {
+      return res.status(400).json({ error: 'Vui lòng điền đủ thông tin (tên, số điện thoại, mã tài liệu)' })
+    }
+
+    const doc = await db.selectOne('documents', { id: parseInt(document_id) }, 'id, title, price, file_url, status')
+    if (!doc || doc.status !== 'active') return res.status(404).json({ error: 'Tài liệu không tồn tại' })
+
+    // If free, return file_url immediately
+    if (!doc.price || doc.price <= 0) {
+      return res.json({ free: true, file_url: doc.file_url, title: doc.title })
+    }
+
+    const paymentCode = 'DOC' + Date.now().toString(36).toUpperCase()
+    const order = await db.insert('orders', {
+      user_id: null,
+      total_amount: doc.price,
+      name: sanitizeInput(name),
+      phone: sanitizeInput(phone),
+      email: sanitizeInput(email || ''),
+      address: '',
+      note: `Tài liệu: ${doc.title}`,
+      payment_code: paymentCode,
+    })
+
+    await db.insert('order_items', {
+      order_id: order.id,
+      product_type: 'document',
+      product_id: String(doc.id),
+      product_name: doc.title,
+      price: doc.price,
+      quantity: 1,
+    })
+
+    res.status(201).json({
+      message: 'Đặt hàng thành công',
+      order: {
+        orderId: order.id,
+        totalAmount: doc.price,
+        paymentCode,
+        docTitle: doc.title,
+      },
+    })
+  } catch (err) {
+    console.error('Guest document order error:', err)
+    res.status(500).json({ error: err.message || 'Lỗi tạo đơn hàng' })
+  }
+})
+
+// ============================================
+// GET /api/orders/guest/:id/status — poll order status (no auth)
+// ============================================
+router.get('/orders/guest/:id/status', async (req, res) => {
+  try {
+    const order = await db.selectOne('orders', { id: parseInt(req.params.id) }, 'id, status')
+    if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' })
+
+    let file_url = null
+    if (order.status === 'paid') {
+      // Fetch document file_url from order items
+      const items = await db.selectAll('order_items', { where: { order_id: order.id } })
+      if (items.length > 0 && items[0].product_type === 'document') {
+        const doc = await db.selectOne('documents', { id: parseInt(items[0].product_id) }, 'file_url')
+        file_url = doc?.file_url || null
+      }
+    }
+
+    res.json({ status: order.status, file_url })
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 export default router
