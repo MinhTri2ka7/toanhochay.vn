@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   FileText, Download, CheckCircle, Loader2, CreditCard,
   ArrowLeft, User, Phone, Mail,
@@ -10,6 +10,7 @@ import { formatPrice } from '../lib/api'
 
 export default function DocumentBuyPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const settings = useSettings()
 
   const [doc, setDoc] = useState(null)
@@ -51,6 +52,14 @@ export default function DocumentBuyPage() {
     }, 8000)
     return () => clearInterval(pollerRef.current)
   }, [order, orderStatus])
+
+  // Auto-redirect: khi thanh toán xong → mở file + về trang tài liệu
+  useEffect(() => {
+    if (orderStatus === 'paid' && fileUrl) {
+      window.open(fileUrl, '_blank', 'noopener,noreferrer')
+      navigate('/tai-lieu', { replace: true })
+    }
+  }, [orderStatus, fileUrl, navigate])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -130,14 +139,23 @@ export default function DocumentBuyPage() {
               download
               className="w-full h-14 rounded-2xl font-bold text-base bg-emerald-600 text-white
                          flex items-center justify-center gap-3 shadow-lg hover:bg-emerald-700
-                         transition-all duration-200 mb-4"
+                         transition-all duration-200 mb-3"
             >
               <Download size={22} />
               Tải xuống tài liệu
             </a>
+            <Link
+              to="/tai-lieu"
+              className="w-full h-12 rounded-2xl font-semibold text-sm border-2 border-brand-200
+                         text-brand-700 bg-brand-50 hover:bg-brand-100
+                         flex items-center justify-center gap-2 transition-all duration-200 mb-4"
+            >
+              <ArrowLeft size={16} />
+              Về trang Tài liệu
+            </Link>
             <Link to="/tai-lieu"
-                  className="text-sm text-gray-400 hover:text-gray-600 inline-flex items-center gap-1">
-              <ArrowLeft size={14} /> Xem thêm tài liệu khác
+                  className="text-xs text-gray-400 hover:text-gray-600 inline-flex items-center gap-1">
+              <ArrowLeft size={12} /> Xem thêm tài liệu khác
             </Link>
           </div>
         </ScrollReveal>
