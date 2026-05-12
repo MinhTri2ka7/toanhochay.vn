@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, X, Trash2, ToggleLeft, ToggleRight, FileText, PenLine, List, CheckCircle2, Pencil } from 'lucide-react'
+import { Plus, X, Trash2, ToggleLeft, ToggleRight, FileText, PenLine, List, CheckCircle2, Pencil, Copy } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 const emptyExam = { title: '', subject: 'math', duration: 90, difficulty: 'medium', passcode: '', status: 'active', points_correct: 1, points_wrong: 0 }
@@ -28,6 +28,7 @@ export default function AdminExams() {
   const [savingQ, setSavingQ] = useState(false)
   const [editingQ, setEditingQ] = useState(null)  // question being edited (null = add mode)
   const [savedCount, setSavedCount] = useState(0)
+  const [duplicatingId, setDuplicatingId] = useState(null) // id of exam being cloned
   const [justSaved, setJustSaved] = useState(false)
   const justSavedTimer = useRef(null)
   const questionTextRef = useRef(null)
@@ -156,6 +157,23 @@ export default function AdminExams() {
     loadExams()
   }
 
+  async function duplicateExam(id) {
+    if (duplicatingId) return
+    setDuplicatingId(id)
+    try {
+      const r = await fetch(`/api/admin/exams/${id}/duplicate`, {
+        method: 'POST', credentials: 'include',
+      })
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.error)
+      await loadExams()
+    } catch (err) {
+      alert('Lỗi nhân bản: ' + err.message)
+    } finally {
+      setDuplicatingId(null)
+    }
+  }
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" /></div>
 
   return (
@@ -199,6 +217,17 @@ export default function AdminExams() {
               </button>
               <div className="flex gap-1 shrink-0">
                 <button onClick={() => openEdit(e)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200">Sửa</button>
+                <button
+                  onClick={() => duplicateExam(e.id)}
+                  disabled={duplicatingId === e.id}
+                  title="Nhân bản đề thi"
+                  className="px-2 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
+                >
+                  {duplicatingId === e.id
+                    ? <span className="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                    : <Copy size={11} />}
+                  Sao chép
+                </button>
                 <button onClick={() => deleteExam(e.id)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-red-100 text-red-600 hover:bg-red-200">Xóa</button>
               </div>
             </div>

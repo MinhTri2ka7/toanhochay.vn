@@ -507,6 +507,69 @@ router.delete('/exams/:id', async (req, res) => {
   }
 })
 
+// POST /api/admin/exams/:id/duplicate — clone exam + all questions
+router.post('/exams/:id/duplicate', async (req, res) => {
+  try {
+    const srcId = parseInt(req.params.id)
+
+    // 1. Load source exam
+    const src = await db.selectOne('mock_tests', { id: srcId })
+    if (!src) return res.status(404).json({ error: 'Không tìm thấy đề thi' })
+
+    // 2. Insert cloned exam (inactive by default to avoid accidental publish)
+    const newExam = await db.insert('mock_tests', {
+      title: `${src.title} (Bản sao)`,
+      subject: src.subject,
+      duration: src.duration,
+      difficulty: src.difficulty,
+      passcode: src.passcode || null,
+      status: 'inactive',
+      points_correct: src.points_correct ?? 1,
+      points_wrong: src.points_wrong ?? 0,
+      total_questions: 0,
+    })
+    const newId = newExam.id
+
+    // 3. Load all source questions
+    const questions = await db.selectAll('questions', {
+      where: { test_id: srcId },
+      order: { column: 'sort_order', ascending: true },
+    })
+
+    // 4. Bulk-insert cloned questions
+    if (questions.length > 0) {
+      const cloned = questions.map(q => ({
+        test_id: newId,
+        question_type: q.question_type,
+        question_text: q.question_text,
+        image: q.image || null,
+        option_a: q.option_a || null, option_b: q.option_b || null,
+        option_c: q.option_c || null, option_d: q.option_d || null,
+        option_e: q.option_e || null,
+        option_a_image: q.option_a_image || '',
+        option_b_image: q.option_b_image || '',
+        option_c_image: q.option_c_image || '',
+        option_d_image: q.option_d_image || '',
+        option_e_image: q.option_e_image || '',
+        correct_answer: q.correct_answer || null,
+        explanation: q.explanation || '',
+        sort_order: q.sort_order,
+        points_correct: q.points_correct ?? 1,
+        points_wrong: q.points_wrong ?? 0,
+      }))
+      await db.insertMany('questions', cloned)
+    }
+
+    // 5. Update total_questions count on new exam
+    await db.update('mock_tests', { total_questions: questions.length }, { id: newId })
+
+    res.status(201).json({ message: 'Nhân bản thành công', id: newId, title: `${src.title} (Bản sao)` })
+  } catch (err) {
+    console.error('Duplicate exam error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 // Questions for a test
 router.get('/exams/:id/questions', async (req, res) => {
   try {
