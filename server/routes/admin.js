@@ -547,7 +547,32 @@ router.post('/exams/:id/questions', async (req, res) => {
   }
 })
 
+router.put('/exams/:testId/questions/:qId', async (req, res) => {
+  try {
+    const { question_type, question_text, image, option_a, option_b, option_c, option_d, option_e,
+            option_a_image, option_b_image, option_c_image, option_d_image, option_e_image,
+            correct_answer, explanation, points_correct, points_wrong } = req.body
+    if (!question_text) return res.status(400).json({ error: 'Nội dung câu hỏi không được để trống' })
+    await db.supabase.from('questions').update({
+      question_type: question_type || 'multiple_choice',
+      question_text, image: image || null,
+      option_a: option_a || null, option_b: option_b || null,
+      option_c: option_c || null, option_d: option_d || null, option_e: option_e || null,
+      option_a_image: option_a_image || '', option_b_image: option_b_image || '',
+      option_c_image: option_c_image || '', option_d_image: option_d_image || '',
+      option_e_image: option_e_image || '',
+      correct_answer: correct_answer || null,
+      explanation: explanation || '',
+      points_correct: points_correct ?? 1, points_wrong: points_wrong ?? 0,
+    }).eq('id', parseInt(req.params.qId)).eq('test_id', parseInt(req.params.testId))
+    res.json({ message: 'Cập nhật câu hỏi thành công' })
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 router.delete('/exams/:testId/questions/:qId', async (req, res) => {
+
   try {
     const { data, error } = await db.supabase
       .from('questions').delete()

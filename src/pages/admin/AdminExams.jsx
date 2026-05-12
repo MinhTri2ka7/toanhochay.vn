@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Plus, X, Trash2, ToggleLeft, ToggleRight, FileText, PenLine, List, Image as ImageIcon } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, X, Trash2, ToggleLeft, ToggleRight, FileText, PenLine, List, CheckCircle2, Pencil } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 const emptyExam = { title: '', subject: 'math', duration: 90, difficulty: 'medium', passcode: '', status: 'active', points_correct: 1, points_wrong: 0 }
@@ -26,6 +26,11 @@ export default function AdminExams() {
   const [showQModal, setShowQModal] = useState(false)
   const [qForm, setQForm] = useState(emptyQ)
   const [savingQ, setSavingQ] = useState(false)
+  const [editingQ, setEditingQ] = useState(null)  // question being edited (null = add mode)
+  const [savedCount, setSavedCount] = useState(0)
+  const [justSaved, setJustSaved] = useState(false)
+  const justSavedTimer = useRef(null)
+  const questionTextRef = useRef(null)
 
   const diffColors = {
     easy: 'bg-emerald-100 text-emerald-700',
@@ -102,18 +107,47 @@ export default function AdminExams() {
     if (!qForm.question_text.trim()) return
     setSavingQ(true)
     try {
-      await fetch(`/api/admin/exams/${qOverlayExam.id}/questions`, {
-        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(qForm),
-      })
-      setShowQModal(false); setQForm(emptyQ)
-      const r = await fetch(`/api/admin/exams/${qOverlayExam.id}/questions`, { credentials: 'include' })
-      const data = await r.json()
-      setQuestions(Array.isArray(data) ? data : [])
-      loadExams()
+      if (editingQ) {
+        // UPDATE existing question
+        const res = await fetch(`/api/admin/exams/${qOverlayExam.id}/questions/${editingQ.id}`, {
+          method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(qForm),
+        })
+        if (!res.ok) throw new Error('Lỗi cập nhật câu hỏi')
+        setShowQModal(false)
+        setEditingQ(null)
+      } else {
+        // ADD new question
+        const res = await fetch(`/api/admin/exams/${qOverlayExam.id}/questions`, {
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(qForm),
+        })
+        if (!res.ok) throw new Error('Lỗi lưu câu hỏi')
+
+        // Reset form but keep type & point config
+        const { question_type, points_correct, points_wrong } = qForm
+        setQForm({ ...emptyQ, question_type, points_correct, points_wrong })
+
+        // Show toast
+        setSavedCount(prev => prev + 1)
+        setJustSaved(true)
+        if (justSavedTimer.current) clearTimeout(justSavedTimer.current)
+        justSavedTimer.current = setTimeout(() => setJustSaved(false), 2000)
+
+        // Auto-focus next question text field
+        setTimeout(() => questionTextRef.current?.focus(), 50)
+      }
+
+      // Refresh question list in background
+      fetch(`/api/admin/exams/${qOverlayExam.id}/questions`, { credentials: 'include' })
+        .then(r => r.json()).then(data => {
+          setQuestions(Array.isArray(data) ? data : [])
+          loadExams()
+        }).catch(() => {})
     } catch (err) { console.error(err) }
     finally { setSavingQ(false) }
   }
+
 
   async function deleteQuestion(qId) {
     if (!confirm('Xóa câu hỏi này?')) return
@@ -226,9 +260,36 @@ export default function AdminExams() {
                       </div>
                       <p className="text-sm font-medium text-gray-800">{q.question_text}</p>
                     </div>
-                    <button onClick={() => deleteQuestion(q.id)} className="shrink-0 text-red-400 hover:text-red-600 p-1">
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        onClick={() => {
+                          setEditingQ(q)
+                          setQForm({
+                            question_type: q.question_type || 'multiple_choice',
+                            question_text: q.question_text || '',
+                            image: q.image || '',
+                            option_a: q.option_a || '', option_b: q.option_b || '',
+                            option_c: q.option_c || '', option_d: q.option_d || '',
+                            option_e: q.option_e || '',
+                            option_a_image: q.option_a_image || '', option_b_image: q.option_b_image || '',
+                            option_c_image: q.option_c_image || '', option_d_image: q.option_d_image || '',
+                            option_e_image: q.option_e_image || '',
+                            correct_answer: q.correct_answer || 'A',
+                            explanation: q.explanation || '',
+                            points_correct: q.points_correct ?? 1,
+                            points_wrong: q.points_wrong ?? 0,
+                          })
+                          setShowQModal(true)
+                        }}
+                        className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Sửa câu hỏi"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={() => deleteQuestion(q.id)} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa câu hỏi">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Question image */}
@@ -349,12 +410,34 @@ export default function AdminExams() {
 
       {/* Add Question Modal */}
       {showQModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => setShowQModal(false)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => { setShowQModal(false); setSavedCount(0); setJustSaved(false); setEditingQ(null) }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto" onClick={ev => ev.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Thêm câu hỏi</h2>
-              <button onClick={() => setShowQModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"><X size={18} /></button>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{editingQ ? 'Sửa câu hỏi' : 'Thêm câu hỏi'}</h2>
+                {!editingQ && savedCount > 0 && (
+                  <p className="text-xs text-emerald-600 font-semibold mt-0.5">
+                    ✓ Đã lưu {savedCount} câu trong phiên này
+                  </p>
+                )}
+                {editingQ && (
+                  <p className="text-xs text-blue-500 font-semibold mt-0.5">Đang chỉnh sửa câu hỏi</p>
+                )}
+              </div>
+              <button onClick={() => { setShowQModal(false); setSavedCount(0); setJustSaved(false); setEditingQ(null) }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100"><X size={18} /></button>
             </div>
+
+            {/* Auto-save toast */}
+            <div className={`overflow-hidden transition-all duration-300 ${
+              justSaved ? 'max-h-12 mb-3' : 'max-h-0 mb-0'
+            }`}>
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold px-3 py-2 rounded-xl">
+                <CheckCircle2 size={16} className="shrink-0" />
+                Đã lưu câu {savedCount}! Tiếp tục nhập câu tiếp theo ↓
+              </div>
+            </div>
+
             <form onSubmit={addQuestion} className="space-y-3">
               {/* Question type toggle */}
               <div>
@@ -380,7 +463,7 @@ export default function AdminExams() {
               {/* Question text */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nội dung câu hỏi *</label>
-                <textarea value={qForm.question_text} onChange={e => setQForm(f => ({ ...f, question_text: e.target.value }))} rows={3} required
+                <textarea ref={questionTextRef} value={qForm.question_text} onChange={e => setQForm(f => ({ ...f, question_text: e.target.value }))} rows={3} required
                           className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:border-brand-500 outline-none resize-none" />
               </div>
 
@@ -452,8 +535,12 @@ export default function AdminExams() {
               </div>
 
               <button type="submit" disabled={savingQ}
-                      className="w-full h-10 rounded-xl font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-colors">
-                {savingQ ? 'Đang lưu...' : 'Thêm câu hỏi'}
+                      className="w-full h-11 rounded-xl font-bold text-sm bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                {savingQ
+                  ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Đang lưu...</>
+                  : editingQ
+                    ? <><CheckCircle2 size={16} /> Lưu thay đổi</>
+                    : <><CheckCircle2 size={16} /> Lưu câu & tiếp tục nhập</>}
               </button>
             </form>
           </div>

@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Clock, CheckCircle, XCircle, ArrowLeft, Send, Loader2, Lock, MinusCircle, Trophy, Play, FileText, Users } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, ArrowLeft, Send, Loader2, Lock, MinusCircle, Trophy, Play, FileText, Users, Save } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import ScrollReveal from '../components/ScrollReveal'
+
+// localStorage key for draft answers
+const getDraftKey = (examId) => `exam_draft_${examId}`
 
 export default function ExamTakingPage() {
   const { id } = useParams()
@@ -21,8 +24,11 @@ export default function ExamTakingPage() {
   const [started, setStarted] = useState(false)
   const [leaderboard, setLeaderboard] = useState([])
   const [lbLoading, setLbLoading] = useState(true)
+  // Auto-save state
+  const [savedToast, setSavedToast] = useState(null) // { qIdx, opt }
+  const toastTimerRef = useRef(null)
 
-  // Load exam + leaderboard
+  // Load exam + leaderboard, then restore draft answers from localStorage
   useEffect(() => {
     async function loadExam() {
       try {
@@ -31,6 +37,18 @@ export default function ExamTakingPage() {
         if (!res.ok) throw new Error(data.error)
         setExam(data)
         setTimeLeft(data.duration * 60)
+        // Restore draft answers saved during a previous session
+        try {
+          const saved = localStorage.getItem(getDraftKey(id))
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            if (parsed && typeof parsed === 'object') {
+              setAnswers(parsed)
+              // Auto-start if there are draft answers (user already began)
+              if (Object.keys(parsed).length > 0) setStarted(true)
+            }
+          }
+        } catch (_) {}
       } catch (err) {
         console.error(err)
       } finally {
@@ -67,9 +85,18 @@ export default function ExamTakingPage() {
     return () => clearInterval(timer)
   }, [started, submitted, timeLeft, exam])
 
-  function selectAnswer(questionId, answer) {
+  function selectAnswer(questionId, answer, qIdx) {
     if (submitted) return
-    setAnswers(prev => ({ ...prev, [questionId]: answer }))
+    setAnswers(prev => {
+      const next = { ...prev, [questionId]: answer }
+      // Auto-save to localStorage immediately
+      try { localStorage.setItem(getDraftKey(id), JSON.stringify(next)) } catch (_) {}
+      return next
+    })
+    // Show brief save toast on the question card
+    setSavedToast({ qIdx, opt: answer })
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setSavedToast(null), 1800)
   }
 
   const handleSubmit = useCallback(async () => {
@@ -89,6 +116,8 @@ export default function ExamTakingPage() {
       const data = await res.json()
       setResults(data)
       setSubmitted(true)
+      // Clear draft after successful submit
+      try { localStorage.removeItem(getDraftKey(id)) } catch (_) {}
     } catch (err) {
       console.error(err)
     } finally {
