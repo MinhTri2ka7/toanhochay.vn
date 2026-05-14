@@ -533,13 +533,19 @@ router.get('/learn/:slug', authenticateToken, async (req, res) => {
     if (!course) return res.status(404).json({ error: 'Không tìm thấy khóa học' })
 
     // Check enrollment
-    const { data: enrollment } = await db.supabase
-      .from('user_courses').select('id')
-      .eq('user_id', req.user.id)
-      .eq('course_id', course.id)
-      .maybeSingle()
+    const isAdmin = req.user?.role === 'admin'
+    let enrollment = null
 
-    if (!enrollment) {
+    if (!isAdmin) {
+      const { data } = await db.supabase
+        .from('user_courses').select('id')
+        .eq('user_id', req.user.id)
+        .eq('course_id', course.id)
+        .maybeSingle()
+      enrollment = data
+    }
+
+    if (!enrollment && !isAdmin) {
       return res.status(403).json({ error: 'Bạn chưa mua khóa học này', enrolled: false })
     }
 
@@ -587,13 +593,19 @@ router.get('/lessons/:id', authenticateToken, async (req, res) => {
     if (!lesson) return res.status(404).json({ error: 'Không tìm thấy bài học' })
 
     // Check enrollment
-    const { data: enrollment } = await db.supabase
-      .from('user_courses').select('id')
-      .eq('user_id', req.user.id)
-      .eq('course_id', lesson.course_id)
-      .maybeSingle()
+    const isAdmin = req.user?.role === 'admin'
+    let enrollment = null
 
-    if (!enrollment) {
+    if (!isAdmin) {
+      const { data } = await db.supabase
+        .from('user_courses').select('id')
+        .eq('user_id', req.user.id)
+        .eq('course_id', lesson.course_id)
+        .maybeSingle()
+      enrollment = data
+    }
+
+    if (!enrollment && !isAdmin) {
       return res.status(403).json({ error: 'Bạn chưa mua khóa học này' })
     }
 
