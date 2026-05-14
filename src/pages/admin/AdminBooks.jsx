@@ -67,7 +67,7 @@ export default function AdminBooks() {
       const r = await fetch(url, {
         method, credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, name: form.name.trim() }),
       })
       if (!r.ok) { const d = await r.json(); throw new Error(d.error) }
       setShowModal(false)

@@ -76,11 +76,12 @@ export default function AdminCourses() {
     try {
       const url = editing ? `/api/admin/courses/${editing.id}` : '/api/admin/courses'
       const method = editing ? 'PUT' : 'POST'
-      const slug = form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      const trimmedName = form.name.trim()
+      const slug = form.slug ? form.slug.trim() : trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       const r = await fetch(url, {
         method, credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, slug }),
+        body: JSON.stringify({ ...form, name: trimmedName, slug }),
       })
       if (!r.ok) { const d = await r.json(); throw new Error(d.error) }
       setShowModal(false)
