@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { Loader2, CheckCircle, CreditCard, LogIn, UserPlus, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { useCart } from '../contexts/CartContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { usePurchases } from '../contexts/PurchaseContext'
 import ScrollReveal from '../components/ScrollReveal'
@@ -10,16 +9,32 @@ import { formatPrice } from '../lib/api'
 
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth()
-  const { items, totalAmount, clearCart } = useCart()
   const settings = useSettings()
   const { refresh: refreshPurchases } = usePurchases()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Direct buy item: from route state (navigate) or sessionStorage (after login)
+  const [directItem, setDirectItem] = useState(() => {
+    if (location.state?.directItem) return location.state.directItem
+    try {
+      const stored = sessionStorage.getItem('direct_buy')
+      if (stored) {
+        sessionStorage.removeItem('direct_buy')
+        return JSON.parse(stored)
+      }
+    } catch {}
+    return null
+  })
+
+  // The items to checkout = directItem array (single item purchase)
+  const items = directItem ? [directItem] : []
+  const totalAmount = items.reduce((sum, i) => sum + (i.price * (i.quantity || 1)), 0)
 
   const [form, setForm] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
-    address: '',
     note: '',
   })
   const [loading, setLoading] = useState(false)
@@ -27,7 +42,7 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState(null)
   const [orderPaid, setOrderPaid] = useState(false)
 
-  // Pre-fill form when user data becomes available (after login redirect)
+  // Pre-fill form when user data becomes available
   useEffect(() => {
     if (user) {
       setForm(prev => ({
@@ -49,7 +64,7 @@ export default function CheckoutPage() {
           const data = await r.json()
           if (data.status === 'paid') {
             setOrderPaid(true)
-            refreshPurchases() // Update owned courses/books immediately
+            refreshPurchases()
             clearInterval(interval)
           }
         }
@@ -64,10 +79,9 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (loading) return // Prevent double submit
-    if (items.length === 0) return setError('Giỏ hàng trống')
+    if (loading) return
+    if (items.length === 0) return setError('Không có sản phẩm để thanh toán')
     if (!form.name || !form.phone) return setError('Vui lòng nhập họ tên và số điện thoại')
-    // Phone validation
     const phoneClean = form.phone.replace(/\s/g, '')
     if (!/^0\d{9,10}$/.test(phoneClean)) {
       return setError('Số điện thoại không hợp lệ (bắt đầu bằng 0, 10-11 chữ số)')
@@ -86,14 +100,13 @@ export default function CheckoutPage() {
           items: items.map(i => ({
             product_type: i.product_type,
             product_id: i.product_id,
-            quantity: i.quantity,
+            quantity: i.quantity || 1,
           })),
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setOrder(data.order)
-      clearCart()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -168,6 +181,7 @@ export default function CheckoutPage() {
       </div>
     )
   }
+
   // Auth loading
   if (authLoading) {
     return (
@@ -190,45 +204,20 @@ export default function CheckoutPage() {
               Đăng nhập để thanh toán
             </h1>
             <p className="text-gray-500 mb-6 text-sm">
-              Vui lòng đăng nhập hoặc tạo tài khoản để tiếp tục đặt hàng. Giỏ hàng của bạn sẽ được giữ nguyên.
+              Vui lòng đăng nhập hoặc tạo tài khoản để tiếp tục đặt hàng.
             </p>
 
-            {/* Cart preview */}
-            {items.length > 0 && (
-              <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left">
-                <p className="text-xs font-semibold text-gray-500 mb-2">Giỏ hàng của bạn ({items.length} sản phẩm)</p>
-                <div className="space-y-2 mb-3">
-                  {items.slice(0, 3).map(item => (
-                    <div key={item.product_id} className="flex items-center gap-2">
-                      {item.image && <img src={item.image} alt="" className="w-8 h-8 rounded-lg object-cover" />}
-                      <span className="text-xs text-gray-700 flex-1 line-clamp-1">{item.name}</span>
-                      <span className="text-xs font-bold text-brand-700">{formatPrice(item.price)}đ</span>
-                    </div>
-                  ))}
-                  {items.length > 3 && <p className="text-xs text-gray-400">... và {items.length - 3} sản phẩm khác</p>}
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                  <span className="text-xs font-semibold text-gray-600">Tổng cộng</span>
-                  <span className="text-sm font-bold text-red-600">{formatPrice(totalAmount)}đ</span>
+            {/* Item preview */}
+            {directItem && (
+              <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left flex items-center gap-3">
+                {directItem.image && <img src={directItem.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 line-clamp-1">{directItem.name}</p>
+                  <p className="text-sm font-bold text-brand-700 mt-0.5">{formatPrice(directItem.price)}đ</p>
                 </div>
               </div>
             )}
 
-            {/* Benefits */}
-            <div className="text-left mb-6 space-y-2">
-              {[
-                'Theo dõi đơn hàng & lịch sử mua',
-                'Tự động mở khóa khóa học sau thanh toán',
-                'Nhận thông báo khi có ưu đãi mới',
-              ].map((text, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs text-gray-500">
-                  <CheckCircle size={14} className="text-emerald-500 shrink-0" />
-                  {text}
-                </div>
-              ))}
-            </div>
-
-            {/* Action buttons */}
             <div className="space-y-3">
               <Link to="/login?redirect=/checkout"
                     className="w-full h-12 rounded-xl font-semibold bg-brand-600 text-white shadow-md transition-all flex items-center justify-center gap-2 hover:bg-brand-700">
@@ -243,6 +232,20 @@ export default function CheckoutPage() {
             <button onClick={() => navigate(-1)} className="mt-4 text-xs text-gray-400 hover:text-gray-600">
               ← Quay lại
             </button>
+          </div>
+        </ScrollReveal>
+      </div>
+    )
+  }
+
+  // No item to checkout
+  if (items.length === 0) {
+    return (
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+        <ScrollReveal>
+          <div className="max-w-md mx-auto bg-white rounded-3xl shadow-section p-8 text-center">
+            <p className="text-gray-500 mb-4">Không có sản phẩm để thanh toán.</p>
+            <Link to="/khoa-hoc" className="text-brand-600 font-semibold hover:underline">← Xem khóa học</Link>
           </div>
         </ScrollReveal>
       </div>
@@ -269,7 +272,7 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Form */}
             <form onSubmit={handleSubmit} className="lg:col-span-3 bg-white rounded-2xl shadow-card p-6 space-y-4">
-              <h3 className="font-bold text-brand-900">Thông tin nhận hàng</h3>
+              <h3 className="font-bold text-brand-900">Thông tin người mua</h3>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên *</label>
@@ -299,7 +302,7 @@ export default function CheckoutPage() {
                           className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 text-sm outline-none transition-all resize-none" />
               </div>
 
-              <button type="submit" disabled={loading || items.length === 0}
+              <button type="submit" disabled={loading}
                       className="w-full h-12 rounded-xl font-semibold bg-brand-600 text-white
                                  disabled:opacity-50
                                  shadow-md transition-all flex items-center justify-center gap-2">
@@ -313,12 +316,12 @@ export default function CheckoutPage() {
               <div className="space-y-3 mb-4">
                 {items.map(item => (
                   <div key={item.product_id} className="flex items-center gap-3">
-                    <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
+                    {item.image && <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium line-clamp-1">{item.name}</p>
-                      <p className="text-xs text-gray-400">x{item.quantity}</p>
+                      <p className="text-xs font-medium line-clamp-2">{item.name}</p>
+                      <p className="text-xs text-gray-400 capitalize mt-0.5">{item.product_type === 'course' ? 'Khóa học' : item.product_type === 'book' ? 'Sách' : item.product_type}</p>
                     </div>
-                    <p className="text-sm font-bold text-brand-700">{formatPrice(item.price * item.quantity)}đ</p>
+                    <p className="text-sm font-bold text-brand-700 shrink-0">{formatPrice(item.price)}đ</p>
                   </div>
                 ))}
               </div>

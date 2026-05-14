@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { ShoppingCart, Menu, X, User, LogOut, ChevronRight, BookOpen } from 'lucide-react'
+import { Menu, X, User, LogOut, ChevronRight, BookOpen } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { useCart } from '../contexts/CartContext'
 import { useSettings } from '../contexts/SettingsContext'
 import Footer from './Footer'
 import HotlineFAB from './HotlineFAB'
@@ -23,7 +22,6 @@ export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const { totalItems } = useCart()
   const settings = useSettings()
   const siteName = settings.site_name || 'Toán Học Hay'
 
@@ -108,22 +106,8 @@ export default function Layout() {
             ))}
           </nav>
 
-          {/* Right: Auth / User + Cart */}
+          {/* Right: Auth / User */}
           <div className="flex items-center gap-2">
-            {/* Cart button — inline */}
-            <Link to="/gio-hang"
-                  className="relative inline-flex items-center justify-center w-10 h-10
-                             rounded-xl text-brand-700 transition-all duration-300"
-                  aria-label="Giỏ hàng">
-              <ShoppingCart size={20} />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500
-                                 text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full
-                                 flex items-center justify-center shadow-sm animate-scale-in">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
 
             {user ? (
               <div className="relative">

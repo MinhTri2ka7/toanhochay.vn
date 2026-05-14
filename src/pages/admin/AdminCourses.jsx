@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Plus, X, Trash2, GripVertical, Eye, EyeOff, Play, FileText, ChevronUp, ChevronDown, Upload, Paperclip, AlertCircle, Download, Image } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, X, Trash2, GripVertical, Eye, EyeOff, Play, FileText, Upload, Paperclip, AlertCircle, Download, Image } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 const emptyForm = { name: '', slug: '', description: '', price: 0, old_price: 0, image: '', type: 'live', status: 'active', category: '' }
@@ -24,6 +24,8 @@ export default function AdminCourses() {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [fileError, setFileError] = useState('')
   const [categories, setCategories] = useState([])
+  const dragLessonItem = useRef(null)
+  const dragLessonOverItem = useRef(null)
 
   useEffect(() => { loadCourses(); loadCategories() }, [])
 
@@ -290,22 +292,32 @@ export default function AdminCourses() {
                   </button>
                 </div>
               ) : lessons.map((l, idx) => (
-                <div key={l.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div
+                  key={l.id}
+                  draggable
+                  onDragStart={() => handleLessonDragStart(idx)}
+                  onDragEnter={() => handleLessonDragEnter(idx)}
+                  onDragEnd={handleLessonDragEnd}
+                  onDragOver={e => e.preventDefault()}
+                  className="bg-gray-50 rounded-xl p-4 border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+                  style={{ userSelect: 'none' }}
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-xs font-bold text-gray-400">{idx + 1}.</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${l.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {l.status === 'active' ? 'Hiện' : 'Ẩn'}
-                        </span>
-                        {l.is_preview && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">Preview</span>}
-                        {l.video_url && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-600">▶ Video</span>}
+                    <div className="flex items-start gap-2 flex-1">
+                      <GripVertical size={16} className="text-gray-300 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs font-bold text-gray-400">{idx + 1}.</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${l.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {l.status === 'active' ? 'Hiện' : 'Ẩn'}
+                          </span>
+                          {l.is_preview && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700">Preview</span>}
+                          {l.video_url && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-600">▶ Video</span>}
+                        </div>
+                        <p className="text-sm font-medium text-gray-800">{l.title}</p>
                       </div>
-                      <p className="text-sm font-medium text-gray-800">{l.title}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {idx > 0 && <button onClick={() => moveLesson(idx, idx - 1)} className="p-1 text-gray-400 hover:text-gray-600"><ChevronUp size={14} /></button>}
-                      {idx < lessons.length - 1 && <button onClick={() => moveLesson(idx, idx + 1)} className="p-1 text-gray-400 hover:text-gray-600"><ChevronDown size={14} /></button>}
                       <button onClick={() => openEditLesson(l)} className="px-2 py-1 rounded text-xs font-semibold text-blue-600 hover:bg-blue-50">Sửa</button>
                       <button onClick={() => deleteLesson(l.id)} className="p-1 text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
                     </div>
@@ -533,5 +545,16 @@ export default function AdminCourses() {
         body: JSON.stringify({ order: newLessons.map(l => l.id) }),
       })
     } catch (e) { console.error(e) }
+  }
+
+  function handleLessonDragStart(idx) { dragLessonItem.current = idx }
+  function handleLessonDragEnter(idx) { dragLessonOverItem.current = idx }
+  function handleLessonDragEnd() {
+    if (dragLessonItem.current === null || dragLessonOverItem.current === null) return
+    if (dragLessonItem.current !== dragLessonOverItem.current) {
+      moveLesson(dragLessonItem.current, dragLessonOverItem.current)
+    }
+    dragLessonItem.current = null
+    dragLessonOverItem.current = null
   }
 }

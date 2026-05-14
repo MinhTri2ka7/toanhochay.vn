@@ -272,6 +272,31 @@ router.delete('/books/:id', async (req, res) => {
   }
 })
 
+// POST /api/admin/books/:id/duplicate — clone a book
+router.post('/books/:id/duplicate', async (req, res) => {
+  try {
+    const src = await db.selectOne('books', { id: req.params.id })
+    if (!src) return res.status(404).json({ error: 'Không tìm thấy sách' })
+    const newId = Date.now().toString(36) + Math.random().toString(36).substr(2)
+    await db.insert('books', {
+      id: newId,
+      name: `${src.name} (Bản sao)`,
+      description: src.description || '',
+      price: src.price || 0,
+      old_price: src.old_price || 0,
+      image: src.image || '',
+      stock: src.stock || 0,
+      category: src.category || '',
+      pdf_url: src.pdf_url || '',
+      status: 'draft', // draft to avoid accidental publish
+    })
+    res.status(201).json({ message: 'Nhân bản thành công', id: newId })
+  } catch (err) {
+    console.error('Duplicate book error:', err)
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
 // ============================================
 // FEEDBACKS & HONORS CRUD
 // ============================================
@@ -429,15 +454,36 @@ router.get('/exam-results', async (req, res) => {
     const { data, error } = await db.supabase
       .from('test_results').select('*')
       .order('completed_at', { ascending: false })
+      .limit(500)
     if (error) throw error
+    if (!data?.length) return res.json([])
 
-    const result = await Promise.all((data || []).map(async (tr) => {
-      const user = tr.user_id ? await db.selectOne('users', { id: tr.user_id }, 'name, email') : null
-      const exam = await db.selectOne('mock_tests', { id: tr.test_id }, 'title')
-      return { ...tr, student_name: user?.name, student_email: user?.email, exam_title: exam?.title }
-    }))
-    res.json(result)
+    // Batch fetch users and exams
+    const userIds = [...new Set(data.map(r => r.user_id).filter(Boolean))]
+    const testIds = [...new Set(data.map(r => r.test_id).filter(Boolean))]
+
+    const [usersRes, examsRes] = await Promise.all([
+      userIds.length > 0
+        ? db.supabase.from('users').select('id, name, email').in('id', userIds)
+        : { data: [] },
+      testIds.length > 0
+        ? db.supabase.from('mock_tests').select('id, title').in('id', testIds)
+        : { data: [] },
+    ])
+
+    const userMap = {}
+    for (const u of (usersRes.data || [])) userMap[u.id] = u
+    const examMap = {}
+    for (const e of (examsRes.data || [])) examMap[e.id] = e
+
+    res.json(data.map(tr => ({
+      ...tr,
+      student_name: userMap[tr.user_id]?.name || 'Khách',
+      student_email: userMap[tr.user_id]?.email || '',
+      exam_title: examMap[tr.test_id]?.title || `Đề #${tr.test_id}`,
+    })))
   } catch (err) {
+    console.error('Exam results error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })
@@ -646,6 +692,20 @@ router.delete('/exams/:testId/questions/:qId', async (req, res) => {
     const newCount = await db.count('questions', { test_id: parseInt(req.params.testId) })
     await db.update('mock_tests', { total_questions: newCount }, { id: parseInt(req.params.testId) })
     res.json({ message: 'Đã xóa câu hỏi' })
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi server' })
+  }
+})
+
+// PUT /api/admin/exams/:id/questions/reorder — drag & drop sort
+router.put('/exams/:id/questions/reorder', async (req, res) => {
+  try {
+    const { order } = req.body // array of question IDs in new order
+    if (!Array.isArray(order)) return res.status(400).json({ error: 'Invalid order' })
+    for (let i = 0; i < order.length; i++) {
+      await db.update('questions', { sort_order: i + 1 }, { id: order[i] })
+    }
+    res.json({ message: 'Đã sắp xếp lại' })
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server' })
   }

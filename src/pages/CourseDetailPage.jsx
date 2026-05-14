@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Play, Clock, BookOpen, Lock, ShoppingCart, Check, ChevronLeft, Loader2, Eye, CheckCircle } from 'lucide-react'
+import { Play, Clock, BookOpen, Lock, ShoppingBag, Check, ChevronLeft, Loader2, Eye, CheckCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { useCart } from '../contexts/CartContext'
 import ScrollReveal from '../components/ScrollReveal'
 
 function formatPrice(price) {
@@ -19,14 +18,12 @@ export default function CourseDetailPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { addItem } = useCart()
 
   const [course, setCourse] = useState(null)
   const [lessons, setLessons] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [enrolled, setEnrolled] = useState(false)
-  const [added, setAdded] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -65,11 +62,22 @@ export default function CourseDetailPage() {
     load()
   }, [slug, user])
 
-  function handleAddToCart() {
+  function handleBuyNow() {
     if (!course) return
-    addItem(course, 'course')
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+    const directItem = {
+      product_id: course.id,
+      product_type: 'course',
+      name: course.name,
+      price: course.price,
+      image: course.image,
+      quantity: 1,
+    }
+    if (!user) {
+      sessionStorage.setItem('direct_buy', JSON.stringify(directItem))
+      navigate(`/login?redirect=/checkout`)
+    } else {
+      navigate('/checkout', { state: { directItem } })
+    }
   }
 
   if (loading) return (
@@ -263,25 +271,11 @@ export default function CourseDetailPage() {
                     <Play size={18} /> Vào học ngay
                   </Link>
                 ) : (
-                  <div className="space-y-3">
-                    <button onClick={handleAddToCart}
-                            className={`flex items-center justify-center gap-2 w-full h-12 rounded-xl font-bold
-                                       transition-all shadow-sm
-                                       ${added
-                                         ? 'bg-green-500 text-white'
-                                         : 'bg-brand-600 text-white hover:bg-brand-700'}`}>
-                      {added ? (
-                        <><Check size={18} /> Đã thêm vào giỏ</>
-                      ) : (
-                        <><ShoppingCart size={18} /> Thêm vào giỏ hàng</>
-                      )}
-                    </button>
-                    <Link to="/gio-hang"
+                  <button onClick={handleBuyNow}
                           className="flex items-center justify-center gap-2 w-full h-12 rounded-xl font-bold
-                                     border-2 border-brand-600 text-brand-700 hover:bg-brand-50 transition-colors">
-                      Mua ngay
-                    </Link>
-                  </div>
+                                     bg-brand-600 text-white hover:bg-brand-700 transition-all shadow-sm">
+                    <ShoppingBag size={18} /> Mua ngay
+                  </button>
                 )}
 
                 {/* Course features */}

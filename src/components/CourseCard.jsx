@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useCart } from '../contexts/CartContext'
+import { Link, useNavigate } from 'react-router-dom'
 import { usePurchases } from '../contexts/PurchaseContext'
-import { ImageOff, ShoppingCart, Check, CheckCircle } from 'lucide-react'
+import { ImageOff, ShoppingBag, CheckCircle } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN').format(price)
@@ -10,9 +10,9 @@ function formatPrice(price) {
 
 export default function CourseCard({ item, type = 'course' }) {
   const [imgError, setImgError] = useState(false)
-  const [added, setAdded] = useState(false)
-  const { addItem } = useCart()
   const { ownedCourseIds, ownedBookIds } = usePurchases()
+  const { user } = useAuth()
+  const navigate = useNavigate()
 
   // Check if user owns this item
   const isOwned = type === 'book'
@@ -30,13 +30,26 @@ export default function CourseCard({ item, type = 'course' }) {
     ? Math.round(((oldPrice - item.price) / oldPrice) * 100)
     : 0
 
-  function handleAddToCart(e) {
+  function handleBuyNow(e) {
     e.preventDefault()
     e.stopPropagation()
-    if (isOwned) return // Don't add owned items to cart
-    addItem(item, type)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 1500)
+    if (isOwned) return
+    // Navigate directly to checkout with this item
+    const directItem = {
+      product_id: item.id,
+      product_type: type,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      quantity: 1,
+    }
+    if (!user) {
+      // Save to session then go login
+      sessionStorage.setItem('direct_buy', JSON.stringify(directItem))
+      navigate('/login?redirect=/checkout')
+    } else {
+      navigate('/checkout', { state: { directItem } })
+    }
   }
 
   return (
@@ -94,7 +107,7 @@ export default function CourseCard({ item, type = 'course' }) {
                        text-brand-900 group-hover:text-brand-700 transition-colors">
           {item.name}
         </h3>
-        {/* Price row + Cart button */}
+        {/* Price row + Buy button */}
         <div className="flex items-center justify-between gap-2 mt-auto">
           {isOwned ? (
             /* Owned — show "Đã mua" label */
@@ -114,18 +127,16 @@ export default function CourseCard({ item, type = 'course' }) {
               )}
             </div>
           )}
-          {/* Cart button — hidden when owned */}
+          {/* Buy Now button — hidden when owned */}
           {!isOwned && (
             <button
-              onClick={handleAddToCart}
-              className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
+              onClick={handleBuyNow}
+              className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
                           transition-all duration-200 shadow-sm
-                          ${added
-                            ? 'bg-green-500 text-white scale-110'
-                            : 'bg-brand-100 text-brand-700 hover:bg-brand-500 hover:text-white active:scale-95'}`}
-              title="Thêm vào giỏ hàng"
+                          bg-brand-100 text-brand-700 hover:bg-brand-500 hover:text-white active:scale-95"
+              title="Mua ngay"
             >
-              {added ? <Check size={14} strokeWidth={3} /> : <ShoppingCart size={14} />}
+              <ShoppingBag size={14} />
             </button>
           )}
         </div>

@@ -8,7 +8,11 @@ function toEmbedUrl(url) {
   if (!url) return ''
   let videoId = ''
   try {
-    const u = new URL(url)
+    let processUrl = url;
+    if (!processUrl.startsWith('http://') && !processUrl.startsWith('https://')) {
+      processUrl = 'https://' + processUrl;
+    }
+    const u = new URL(processUrl)
     if (u.hostname.includes('youtu.be')) {
       videoId = u.pathname.slice(1).split('/')[0]
     } else if (u.hostname.includes('youtube.com')) {
@@ -20,13 +24,20 @@ function toEmbedUrl(url) {
         videoId = u.searchParams.get('v')
       }
     }
-  } catch {
-    // If URL parsing fails, treat the whole string as a video ID
-    if (/^[a-zA-Z0-9_-]{11}$/.test(url)) videoId = url
+  } catch {}
+  
+  if (!videoId) {
+    // Fallback regex to extract video ID from almost any youtube format
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|shorts\/|watch\?v=|watch\?.+&v=))([\w-]{11})/i);
+    if (match && match[1]) {
+      videoId = match[1];
+    } else if (/^[\w-]{11}$/.test(url.trim())) {
+      videoId = url.trim();
+    }
   }
   if (!videoId) return ''
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&origin=${encodeURIComponent(origin)}`
+  return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`
 }
 
 function formatDuration(sec) {
@@ -233,10 +244,10 @@ export default function LearnPage() {
                   className="absolute inset-0 w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
                   title={activeLesson?.title}
+                  loading="lazy"
                 />
-                {/* Transparent overlay to prevent easy inspect */}
-                <div className="absolute inset-0 pointer-events-none" />
                 {/* Dynamic watermark */}
                 {user && (
                   <div className="absolute bottom-4 right-4 pointer-events-none opacity-30 text-white text-xs font-bold select-none"

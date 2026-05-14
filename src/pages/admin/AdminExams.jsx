@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, X, Trash2, ToggleLeft, ToggleRight, FileText, PenLine, List, CheckCircle2, Pencil, Copy } from 'lucide-react'
+import { Plus, X, Trash2, ToggleLeft, ToggleRight, FileText, PenLine, List, CheckCircle2, Pencil, Copy, GripVertical } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 
 const emptyExam = { title: '', subject: 'math', duration: 90, difficulty: 'medium', passcode: '', status: 'active', points_correct: 1, points_wrong: 0 }
@@ -32,6 +32,8 @@ export default function AdminExams() {
   const [justSaved, setJustSaved] = useState(false)
   const justSavedTimer = useRef(null)
   const questionTextRef = useRef(null)
+  const dragItem = useRef(null)
+  const dragOverItem = useRef(null)
 
   const diffColors = {
     easy: 'bg-emerald-100 text-emerald-700',
@@ -174,6 +176,30 @@ export default function AdminExams() {
     }
   }
 
+  async function moveQuestion(fromIdx, toIdx) {
+    const newQs = [...questions]
+    const [moved] = newQs.splice(fromIdx, 1)
+    newQs.splice(toIdx, 0, moved)
+    setQuestions(newQs)
+    try {
+      await fetch(`/api/admin/exams/${qOverlayExam.id}/questions/reorder`, {
+        method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: newQs.map(q => q.id) }),
+      })
+    } catch (e) { console.error(e) }
+  }
+
+  function handleDragStart(idx) { dragItem.current = idx }
+  function handleDragEnter(idx) { dragOverItem.current = idx }
+  function handleDragEnd() {
+    if (dragItem.current === null || dragOverItem.current === null) return
+    if (dragItem.current !== dragOverItem.current) {
+      moveQuestion(dragItem.current, dragOverItem.current)
+    }
+    dragItem.current = null
+    dragOverItem.current = null
+  }
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" /></div>
 
   return (
@@ -275,19 +301,31 @@ export default function AdminExams() {
                   </button>
                 </div>
               ) : questions.map((q, idx) => (
-                <div key={q.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div
+                  key={q.id}
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragEnter={() => handleDragEnter(idx)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={e => e.preventDefault()}
+                  className="bg-gray-50 rounded-xl p-4 border border-gray-200 cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md"
+                  style={{ userSelect: 'none' }}
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-xs font-bold text-gray-400">Câu {idx + 1}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold
-                          ${q.question_type === 'essay' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {q.question_type === 'essay' ? '✏️ Tự luận' : '📝 Trắc nghiệm'}
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">+{q.points_correct ?? 1}</span>
-                        {(q.points_wrong ?? 0) > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-600">−{q.points_wrong}</span>}
+                    <div className="flex items-start gap-2 flex-1">
+                      <GripVertical size={16} className="text-gray-300 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs font-bold text-gray-400">Câu {idx + 1}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold
+                            ${q.question_type === 'essay' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {q.question_type === 'essay' ? '✏️ Tự luận' : '📝 Trắc nghiệm'}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">+{q.points_correct ?? 1}</span>
+                          {(q.points_wrong ?? 0) > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-600">−{q.points_wrong}</span>}
+                        </div>
+                        <p className="text-sm font-medium text-gray-800">{q.question_text}</p>
                       </div>
-                      <p className="text-sm font-medium text-gray-800">{q.question_text}</p>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <button

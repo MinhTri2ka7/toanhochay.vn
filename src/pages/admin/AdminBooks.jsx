@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, X, Package, Link2 } from 'lucide-react'
+import { Plus, X, Package, Copy } from 'lucide-react'
 import ImageUpload from '../../components/ImageUpload'
 import FileUpload from '../../components/FileUpload'
 
@@ -16,6 +16,7 @@ export default function AdminBooks() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [categories, setCategories] = useState([])
+  const [duplicatingId, setDuplicatingId] = useState(null)
 
   useEffect(() => { loadBooks(); loadCategories() }, [])
 
@@ -79,6 +80,23 @@ export default function AdminBooks() {
     if (!confirm('Bạn có chắc chắn muốn xóa sách này? Hành động này không thể hoàn tác.')) return
     await fetch(`/api/admin/books/${id}`, { method: 'DELETE', credentials: 'include' })
     setBooks(prev => prev.filter(b => b.id !== id))
+  }
+
+  async function duplicateBook(id) {
+    if (duplicatingId) return
+    setDuplicatingId(id)
+    try {
+      const r = await fetch(`/api/admin/books/${id}/duplicate`, {
+        method: 'POST', credentials: 'include',
+      })
+      const data = await r.json()
+      if (!r.ok) throw new Error(data.error)
+      await loadBooks()
+    } catch (err) {
+      alert('Lỗi nhân bản: ' + err.message)
+    } finally {
+      setDuplicatingId(null)
+    }
   }
 
   async function updateStock(id, stock) {
@@ -151,6 +169,17 @@ export default function AdminBooks() {
                   <td className="px-4 py-3 text-center">
                     <div className="flex gap-1 justify-center">
                       <button onClick={() => openEdit(b)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200">Sửa</button>
+                      <button
+                        onClick={() => duplicateBook(b.id)}
+                        disabled={duplicatingId === b.id}
+                        title="Nhân bản sách"
+                        className="px-2 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {duplicatingId === b.id
+                          ? <span className="w-3 h-3 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                          : <Copy size={10} />}
+                        Sao chép
+                      </button>
                       <button onClick={() => handleDelete(b.id)} className="px-2 py-1 rounded-lg text-xs font-semibold bg-red-100 text-red-600 hover:bg-red-200">Xóa</button>
                     </div>
                   </td>
