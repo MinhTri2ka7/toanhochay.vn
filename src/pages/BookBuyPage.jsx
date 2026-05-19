@@ -24,11 +24,14 @@ export default function BookBuyPage() {
 
   const pollerRef = useRef(null)
 
-  // Load book info
+  // Load book info — fetch from books list (cached) and find by ID
   useEffect(() => {
-    fetch(`/api/books/${id}`)
-      .then(r => r.ok ? r.json() : Promise.reject('not found'))
-      .then(data => setBook(data))
+    fetch(`/api/books`)
+      .then(r => r.ok ? r.json() : Promise.reject('error'))
+      .then(books => {
+        const found = books.find(b => b.id === id)
+        setBook(found || null)
+      })
       .catch(() => setBook(null))
       .finally(() => setLoading(false))
   }, [id])
