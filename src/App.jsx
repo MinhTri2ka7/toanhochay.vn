@@ -21,6 +21,7 @@ const ExamsPage = lazy(() => import('./pages/ExamsPage'))
 const ExamTakingPage = lazy(() => import('./pages/ExamTakingPage'))
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'))
 const DocumentBuyPage = lazy(() => import('./pages/DocumentBuyPage'))
+const BookBuyPage = lazy(() => import('./pages/BookBuyPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const CartPage = lazy(() => import('./pages/CartPage'))
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
@@ -69,9 +70,11 @@ if (typeof window !== 'undefined') {
       import('./pages/CheckoutPage')
       import('./pages/ActivatePage')
       import('./pages/ExamTakingPage')
+      import('./pages/BookBuyPage')
     }, 800)
   }, { once: true })
 }
+
 
 // ============================================
 // LOADING SPINNER — minimal, quick fade
@@ -122,6 +125,7 @@ function App() {
               <Route path="/de-thi/:id" element={<ExamTakingPage />} />
               <Route path="/tai-lieu" element={<DocumentsPage />} />
               <Route path="/tai-lieu/:id/mua" element={<DocumentBuyPage />} />
+              <Route path="/sach/:id/mua" element={<BookBuyPage />} />
               <Route path="/gioi-thieu" element={<AboutPage />} />
               <Route path="/gio-hang" element={<CartPage />} />
               <Route path="/kich-hoat" element={<ActivatePage />} />

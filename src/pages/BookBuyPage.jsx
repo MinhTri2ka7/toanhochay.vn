@@ -1,0 +1,317 @@
+import { useState, useEffect, useRef } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import {
+  BookOpen, CheckCircle, Loader2, CreditCard,
+  ArrowLeft, User, Phone, Mail,
+} from 'lucide-react'
+import ScrollReveal from '../components/ScrollReveal'
+import { useSettings } from '../contexts/SettingsContext'
+import { formatPrice } from '../lib/api'
+
+export default function BookBuyPage() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const settings = useSettings()
+
+  const [book, setBook] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const [form, setForm] = useState({ name: '', phone: '', email: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [order, setOrder] = useState(null)
+  const [orderStatus, setOrderStatus] = useState('pending')
+
+  const pollerRef = useRef(null)
+
+  // Load book info
+  useEffect(() => {
+    fetch(`/api/books/${id}`)
+      .then(r => r.ok ? r.json() : Promise.reject('not found'))
+      .then(data => setBook(data))
+      .catch(() => setBook(null))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  // Poll order status after order is created
+  useEffect(() => {
+    if (!order || orderStatus === 'paid') return
+    pollerRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/orders/guest/${order.orderId}/status`)
+        if (r.ok) {
+          const data = await r.json()
+          if (data.status === 'paid') {
+            setOrderStatus('paid')
+            clearInterval(pollerRef.current)
+          }
+        }
+      } catch {}
+    }, 8000)
+    return () => clearInterval(pollerRef.current)
+  }, [order, orderStatus])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (submitting) return
+    if (!form.name.trim() || !form.phone.trim()) {
+      setError('Vui lòng nhập họ tên và số điện thoại')
+      return
+    }
+    const phoneClean = form.phone.replace(/\s/g, '')
+    if (!/^0\d{9,10}$/.test(phoneClean)) {
+      setError('Số điện thoại không hợp lệ (bắt đầu 0, 10-11 số)')
+      return
+    }
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/orders/guest-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ book_id: id, ...form }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (data.free) {
+        setOrderStatus('paid')
+        return
+      }
+      setOrder(data.order)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={32} className="animate-spin text-brand-600" />
+      </div>
+    )
+  }
+
+  if (!book) {
+    return (
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%] text-center py-24">
+        <BookOpen size={48} className="mx-auto mb-4 text-gray-300" />
+        <p className="text-gray-500">Sách không tồn tại hoặc đã bị gỡ.</p>
+        <Link to="/sach" className="mt-4 inline-flex items-center gap-1 text-brand-600 text-sm hover:underline">
+          <ArrowLeft size={14} /> Quay lại danh sách sách
+        </Link>
+      </div>
+    )
+  }
+
+  /* ====== PAID SUCCESS ====== */
+  if (orderStatus === 'paid') {
+    return (
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+        <ScrollReveal>
+          <div className="max-w-md mx-auto bg-white rounded-3xl shadow-section p-8 lg:p-12 text-center">
+            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6 animate-bounce">
+              <CheckCircle size={40} className="text-emerald-500" />
+            </div>
+            <h1 className="text-2xl font-bold text-emerald-700 mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
+              Thanh toán thành công! 🎉
+            </h1>
+            <p className="text-gray-500 mb-4 text-sm">{book.name}</p>
+            <p className="text-gray-400 mb-8 text-sm">
+              Đơn hàng đã được xác nhận. Sách sẽ được gửi đến bạn sớm nhất.
+            </p>
+            <Link
+              to="/sach"
+              className="w-full h-12 rounded-2xl font-semibold text-sm border-2 border-brand-200
+                         text-brand-700 bg-brand-50 hover:bg-brand-100
+                         flex items-center justify-center gap-2 transition-all duration-200"
+            >
+              <ArrowLeft size={16} />
+              Về trang Sách
+            </Link>
+          </div>
+        </ScrollReveal>
+      </div>
+    )
+  }
+
+  /* ====== PAYMENT PENDING — show QR ====== */
+  if (order) {
+    const bankName = (settings.bank_name || 'MBBank').replace(/\s/g, '')
+    const bankAccount = settings.bank_account || settings.phone || ''
+    const bankHolder = settings.bank_holder || settings.bank_owner || 'Thầy Nam'
+    const qrUrl = `https://qr.sepay.vn/img?acc=${bankAccount}&bank=${bankName}&amount=${order.totalAmount}&des=${order.paymentCode}`
+
+    return (
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+        <ScrollReveal>
+          <div className="max-w-lg mx-auto bg-white rounded-3xl shadow-section p-8 lg:p-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center shrink-0">
+                <CreditCard size={20} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-brand-900" style={{ fontFamily: 'var(--font-heading)' }}>
+                  Thanh toán sách
+                </h1>
+                <p className="text-xs text-gray-400">Chuyển khoản để xác nhận đơn hàng</p>
+              </div>
+            </div>
+
+            {/* Book info */}
+            <div className="bg-brand-50 rounded-2xl p-4 mb-6 flex items-center gap-3">
+              {order.bookImage && (
+                <img src={order.bookImage} alt="" className="w-12 h-12 rounded-xl object-contain bg-white shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-brand-900 line-clamp-1">{order.bookTitle}</p>
+                <p className="text-xs text-gray-500">Sách</p>
+              </div>
+              <span className="text-base font-bold text-red-600 shrink-0">
+                {formatPrice(order.totalAmount)}đ
+              </span>
+            </div>
+
+            {/* Bank info */}
+            <div className="bg-gray-50 rounded-2xl p-5 mb-5 space-y-2 text-sm">
+              <h3 className="font-bold text-brand-900 mb-3">Thông tin chuyển khoản</h3>
+              <p><span className="text-gray-500">Ngân hàng:</span> <strong>{settings.bank_name || 'MB Bank'}</strong></p>
+              <p><span className="text-gray-500">Số TK:</span> <strong>{bankAccount}</strong></p>
+              <p><span className="text-gray-500">Chủ TK:</span> <strong>{bankHolder}</strong></p>
+              <p><span className="text-gray-500">Số tiền:</span> <strong className="text-red-600">{formatPrice(order.totalAmount)}đ</strong></p>
+              <p><span className="text-gray-500">Nội dung CK:</span> <strong className="text-brand-700">{order.paymentCode}</strong></p>
+            </div>
+
+            {/* QR */}
+            <div className="text-center mb-5">
+              <p className="text-sm font-semibold text-gray-700 mb-3">Quét mã QR để thanh toán</p>
+              <img
+                src={qrUrl}
+                alt="QR thanh toán"
+                className="w-48 h-48 mx-auto rounded-xl border-2 border-gray-200"
+              />
+              <p className="text-xs text-gray-400 mt-2">Giữ nguyên nội dung chuyển khoản</p>
+            </div>
+
+            <p className="text-xs text-gray-400 animate-pulse text-center mb-4">
+              ⏳ Đang chờ xác nhận thanh toán... (tự động kiểm tra mỗi 8 giây)
+            </p>
+
+            <Link to="/sach"
+                  className="w-full h-10 rounded-xl text-sm font-medium border border-gray-200
+                             text-gray-500 flex items-center justify-center gap-1
+                             hover:bg-gray-50 transition-colors">
+              <ArrowLeft size={14} /> Quay lại
+            </Link>
+          </div>
+        </ScrollReveal>
+      </div>
+    )
+  }
+
+  /* ====== FORM — fill name & phone ====== */
+  return (
+    <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+      <ScrollReveal>
+        <div className="max-w-lg mx-auto">
+          {/* Back link */}
+          <Link to="/sach"
+                className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-5">
+            <ArrowLeft size={14} /> Quay lại sách
+          </Link>
+
+          <div className="bg-white rounded-3xl shadow-section p-7 lg:p-10">
+            {/* Book preview */}
+            <div className="flex items-center gap-4 mb-7 pb-5 border-b border-gray-100">
+              {book.image && (
+                <img src={book.image} alt="" className="w-16 h-16 rounded-2xl object-contain bg-gray-50 shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base lg:text-lg font-bold text-brand-900 line-clamp-2"
+                    style={{ fontFamily: 'var(--font-heading)' }}>
+                  {book.name}
+                </h1>
+                <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-400">
+                  <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 font-bold">
+                    {formatPrice(book.price)}đ
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-sm font-bold text-brand-900 mb-4">
+              Điền thông tin để đặt mua
+            </h2>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl mb-4">
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <User size={13} /> Họ tên *
+                </label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  required placeholder="Nguyễn Văn A"
+                  className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
+                             focus:border-brand-500 focus:ring-4 focus:ring-brand-100
+                             text-sm outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <Phone size={13} /> Số điện thoại *
+                </label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                  required placeholder="0xxx xxx xxx"
+                  className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
+                             focus:border-brand-500 focus:ring-4 focus:ring-brand-100
+                             text-sm outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <Mail size={13} /> Email (tuỳ chọn)
+                </label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="your@email.com"
+                  className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
+                             focus:border-brand-500 focus:ring-4 focus:ring-brand-100
+                             text-sm outline-none transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full h-12 rounded-xl font-bold bg-brand-600 text-white
+                           shadow-md hover:bg-brand-700 disabled:opacity-50
+                           flex items-center justify-center gap-2 transition-all"
+              >
+                {submitting
+                  ? <><Loader2 size={18} className="animate-spin" /> Đang xử lý...</>
+                  : <><CreditCard size={18} /> Đặt mua — {formatPrice(book.price)}đ</>
+                }
+              </button>
+
+              <p className="text-xs text-gray-400 text-center">
+                Không cần tài khoản · Sau khi xác nhận thanh toán đơn hàng sẽ được xử lý
+              </p>
+            </form>
+          </div>
+        </div>
+      </ScrollReveal>
+    </div>
+  )
+}

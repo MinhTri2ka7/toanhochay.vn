@@ -268,6 +268,61 @@ router.post('/orders/guest-document', async (req, res) => {
 })
 
 // ============================================
+// POST /api/orders/guest-book — guest (no auth) buy a single book
+// ============================================
+router.post('/orders/guest-book', async (req, res) => {
+  try {
+    const { book_id, name, phone, email } = req.body
+    if (!book_id || !name || !phone) {
+      return res.status(400).json({ error: 'Vui lòng điền đủ thông tin (tên, số điện thoại)' })
+    }
+
+    const book = await db.selectOne('books', { id: parseInt(book_id) }, 'id, name, price, image, status')
+    if (!book || book.status !== 'active') return res.status(404).json({ error: 'Sách không tồn tại' })
+
+    // If free, return immediately
+    if (!book.price || book.price <= 0) {
+      return res.json({ free: true, title: book.name })
+    }
+
+    const paymentCode = 'BOOK' + Date.now().toString(36).toUpperCase()
+    const order = await db.insert('orders', {
+      user_id: null,
+      total_amount: book.price,
+      name: sanitizeInput(name),
+      phone: sanitizeInput(phone),
+      email: sanitizeInput(email || ''),
+      address: '',
+      note: `Sách: ${book.name}`,
+      payment_code: paymentCode,
+    })
+
+    await db.insert('order_items', {
+      order_id: order.id,
+      product_type: 'book',
+      product_id: String(book.id),
+      product_name: book.name,
+      price: book.price,
+      quantity: 1,
+    })
+
+    res.status(201).json({
+      message: 'Đặt hàng thành công',
+      order: {
+        orderId: order.id,
+        totalAmount: book.price,
+        paymentCode,
+        bookTitle: book.name,
+        bookImage: book.image,
+      },
+    })
+  } catch (err) {
+    console.error('Guest book order error:', err)
+    res.status(500).json({ error: err.message || 'Lỗi tạo đơn hàng' })
+  }
+})
+
+// ============================================
 // GET /api/orders/guest/:id/status — poll order status (no auth)
 // ============================================
 router.get('/orders/guest/:id/status', async (req, res) => {

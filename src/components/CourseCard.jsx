@@ -34,7 +34,14 @@ export default function CourseCard({ item, type = 'course' }) {
     e.preventDefault()
     e.stopPropagation()
     if (isOwned) return
-    // Navigate directly to checkout with this item
+
+    // Books: go to guest buy page (no login required)
+    if (type === 'book') {
+      navigate(`/sach/${item.id}/mua`)
+      return
+    }
+
+    // Courses: navigate to checkout (requires login)
     const directItem = {
       product_id: item.id,
       product_type: type,
