@@ -223,6 +223,17 @@ router.post('/orders/guest-document', async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng điền đủ thông tin (tên, số điện thoại, mã tài liệu)' })
     }
 
+    // Duplicate order protection: check for pending orders with same phone in last 60 seconds
+    const recentCutoff = new Date(Date.now() - 60000).toISOString()
+    const { data: recentOrders } = await db.supabase
+      .from('orders').select('id')
+      .eq('phone', phone.replace(/\s/g, ''))
+      .eq('status', 'pending')
+      .gte('created_at', recentCutoff)
+    if (recentOrders && recentOrders.length > 0) {
+      return res.status(429).json({ error: 'Bạn vừa đặt hàng, vui lòng chờ 1 phút trước khi đặt lại' })
+    }
+
     const doc = await db.selectOne('documents', { id: parseInt(document_id) }, 'id, title, price, file_url, status')
     if (!doc || doc.status !== 'active') return res.status(404).json({ error: 'Tài liệu không tồn tại' })
 
@@ -275,6 +286,17 @@ router.post('/orders/guest-book', async (req, res) => {
     const { book_id, name, phone, email } = req.body
     if (!book_id || !name || !phone) {
       return res.status(400).json({ error: 'Vui lòng điền đủ thông tin (tên, số điện thoại)' })
+    }
+
+    // Duplicate order protection: check for pending orders with same phone in last 60 seconds
+    const recentCutoff = new Date(Date.now() - 60000).toISOString()
+    const { data: recentOrders } = await db.supabase
+      .from('orders').select('id')
+      .eq('phone', phone.replace(/\s/g, ''))
+      .eq('status', 'pending')
+      .gte('created_at', recentCutoff)
+    if (recentOrders && recentOrders.length > 0) {
+      return res.status(429).json({ error: 'Bạn vừa đặt hàng, vui lòng chờ 1 phút trước khi đặt lại' })
     }
 
     const book = await db.selectOne('books', { id: book_id }, 'id, name, price, image, status')
