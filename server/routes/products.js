@@ -60,7 +60,7 @@ router.get('/books', async (req, res) => {
 // GET /api/books/:id — public info for a single book
 router.get('/books/:id', async (req, res) => {
   try {
-    const book = await db.selectOne('books', { id: parseInt(req.params.id), status: 'active' })
+    const book = await db.selectOne('books', { id: req.params.id, status: 'active' })
     if (!book) return res.status(404).json({ error: 'Không tìm thấy sách' })
     // Don't expose pdf_url to public
     const { pdf_url, ...publicBook } = book

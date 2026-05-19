@@ -277,7 +277,7 @@ router.post('/orders/guest-book', async (req, res) => {
       return res.status(400).json({ error: 'Vui lòng điền đủ thông tin (tên, số điện thoại)' })
     }
 
-    const book = await db.selectOne('books', { id: parseInt(book_id) }, 'id, name, price, image, status')
+    const book = await db.selectOne('books', { id: book_id }, 'id, name, price, image, status')
     if (!book || book.status !== 'active') return res.status(404).json({ error: 'Sách không tồn tại' })
 
     // If free, return immediately
