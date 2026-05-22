@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, User, LogOut, ChevronRight, BookOpen } from 'lucide-react'
+import { Menu, X, User, LogOut, ChevronRight, BookOpen, ShoppingBag } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSettings } from '../contexts/SettingsContext'
 import Footer from './Footer'
@@ -140,6 +140,11 @@ export default function Layout() {
                       <Link to="/sach-cua-toi" className="flex items-center gap-2 px-4 py-2.5 text-sm text-brand-800
                                                    hover:bg-brand-50 transition-colors">
                         <BookOpen size={16} /> Sách của tôi
+                        <ChevronRight size={14} className="ml-auto text-gray-300" />
+                      </Link>
+                      <Link to="/lich-su-mua-hang" className="flex items-center gap-2 px-4 py-2.5 text-sm text-brand-800
+                                                   hover:bg-brand-50 transition-colors">
+                        <ShoppingBag size={16} /> Lịch sử mua hàng
                         <ChevronRight size={14} className="ml-auto text-gray-300" />
                       </Link>
                       <button onClick={handleLogout}

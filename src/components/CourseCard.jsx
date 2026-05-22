@@ -35,13 +35,7 @@ export default function CourseCard({ item, type = 'course' }) {
     e.stopPropagation()
     if (isOwned) return
 
-    // Books: go to guest buy page (no login required)
-    if (type === 'book') {
-      navigate(`/sach/${item.id}/mua`)
-      return
-    }
-
-    // Courses: navigate to checkout (requires login)
+    // Both books and courses require login
     const directItem = {
       product_id: item.id,
       product_type: type,
@@ -50,8 +44,20 @@ export default function CourseCard({ item, type = 'course' }) {
       image: item.image,
       quantity: 1,
     }
+
+    if (type === 'book') {
+      // Books: navigate to buy page (requires login — handled by BookBuyPage)
+      if (!user) {
+        sessionStorage.setItem('direct_buy', JSON.stringify(directItem))
+        navigate(`/login?redirect=/sach/${item.id}/mua`)
+      } else {
+        navigate(`/sach/${item.id}/mua`)
+      }
+      return
+    }
+
+    // Courses: navigate to checkout (requires login)
     if (!user) {
-      // Save to session then go login
       sessionStorage.setItem('direct_buy', JSON.stringify(directItem))
       navigate('/login?redirect=/checkout')
     } else {

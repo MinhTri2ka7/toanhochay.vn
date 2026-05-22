@@ -30,6 +30,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/RegisterPage'))
 const LearnPage = lazy(() => import('./pages/LearnPage'))
 const MyBooksPage = lazy(() => import('./pages/MyBooksPage'))
+const PurchaseHistoryPage = lazy(() => import('./pages/PurchaseHistoryPage'))
 
 // Admin pages — heavy, only loaded for admin users
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -130,6 +131,7 @@ function App() {
               <Route path="/gio-hang" element={<CartPage />} />
               <Route path="/kich-hoat" element={<ActivatePage />} />
               <Route path="/sach-cua-toi" element={<ProtectedRoute><MyBooksPage /></ProtectedRoute>} />
+              <Route path="/lich-su-mua-hang" element={<ProtectedRoute><PurchaseHistoryPage /></ProtectedRoute>} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               {/* Legacy auth routes */}

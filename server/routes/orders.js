@@ -207,7 +207,18 @@ router.get('/orders/:id/status', authenticateToken, async (req, res) => {
   try {
     const order = await db.selectOne('orders', { id: parseInt(req.params.id), user_id: req.user.id }, 'id, status')
     if (!order) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' })
-    res.json({ status: order.status })
+
+    let file_url = null
+    if (order.status === 'paid') {
+      // Fetch document file_url from order items (for document purchases)
+      const items = await db.selectAll('order_items', { where: { order_id: order.id } })
+      if (items.length > 0 && items[0].product_type === 'document') {
+        const doc = await db.selectOne('documents', { id: parseInt(items[0].product_id) }, 'file_url')
+        file_url = doc?.file_url || null
+      }
+    }
+
+    res.json({ status: order.status, file_url })
   } catch (err) {
     res.status(500).json({ error: 'Lỗi server' })
   }

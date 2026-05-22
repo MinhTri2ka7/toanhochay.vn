@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   FileText, Download, CheckCircle, Loader2, CreditCard,
-  ArrowLeft, User, Phone, Mail,
+  ArrowLeft, ShieldCheck, LogIn, UserPlus,
 } from 'lucide-react'
 import ScrollReveal from '../components/ScrollReveal'
+import { useAuth } from '../contexts/AuthContext'
+import { usePurchases } from '../contexts/PurchaseContext'
 import { useSettings } from '../contexts/SettingsContext'
 import { formatPrice } from '../lib/api'
 
@@ -12,15 +14,17 @@ export default function DocumentBuyPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const settings = useSettings()
+  const { user, loading: authLoading } = useAuth()
+  const { ownedDocumentIds, refresh: refreshPurchases } = usePurchases()
 
   const [doc, setDoc] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const [form, setForm] = useState({ name: '', phone: '', email: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', note: '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [order, setOrder] = useState(null)      // { orderId, totalAmount, paymentCode, docTitle }
-  const [orderStatus, setOrderStatus] = useState('pending') // 'pending' | 'paid'
+  const [order, setOrder] = useState(null)
+  const [orderStatus, setOrderStatus] = useState('pending')
   const [fileUrl, setFileUrl] = useState(null)
 
   const pollerRef = useRef(null)
@@ -34,24 +38,47 @@ export default function DocumentBuyPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+  // Pre-fill form when user data becomes available
+  useEffect(() => {
+    if (user) {
+      setForm(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || '',
+      }))
+    }
+  }, [user])
+
+  // If user already owns this document, open the file url directly
+  useEffect(() => {
+    if (user && doc && ownedDocumentIds.has(String(doc.id))) {
+      if (doc.file_url) {
+        window.open(doc.file_url, '_blank', 'noopener,noreferrer')
+      }
+      navigate('/tai-lieu', { replace: true })
+    }
+  }, [user, doc, ownedDocumentIds, navigate])
+
   // Poll order status after order is created
   useEffect(() => {
     if (!order || orderStatus === 'paid') return
     pollerRef.current = setInterval(async () => {
       try {
-        const r = await fetch(`/api/orders/guest/${order.orderId}/status`)
+        const r = await fetch(`/api/orders/${order.orderId}/status`, { credentials: 'include' })
         if (r.ok) {
           const data = await r.json()
           if (data.status === 'paid') {
             setOrderStatus('paid')
             setFileUrl(data.file_url)
+            refreshPurchases()
             clearInterval(pollerRef.current)
           }
         }
       } catch {}
     }, 8000)
     return () => clearInterval(pollerRef.current)
-  }, [order, orderStatus])
+  }, [order, orderStatus, refreshPurchases])
 
   // Auto-redirect: khi thanh toán xong → mở file + về trang tài liệu
   useEffect(() => {
@@ -76,19 +103,22 @@ export default function DocumentBuyPage() {
     setSubmitting(true)
     setError('')
     try {
-      const res = await fetch('/api/orders/guest-document', {
+      // Use authenticated order endpoint
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ document_id: id, ...form }),
+        credentials: 'include',
+        body: JSON.stringify({
+          ...form,
+          items: [{
+            product_type: 'document',
+            product_id: id,
+            quantity: 1,
+          }],
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      // Free document returned immediately
-      if (data.free) {
-        setFileUrl(data.file_url)
-        setOrderStatus('paid')
-        return
-      }
       setOrder(data.order)
     } catch (err) {
       setError(err.message)
@@ -97,7 +127,7 @@ export default function DocumentBuyPage() {
     }
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 size={32} className="animate-spin text-brand-600" />
@@ -113,6 +143,56 @@ export default function DocumentBuyPage() {
         <Link to="/tai-lieu" className="mt-4 inline-flex items-center gap-1 text-brand-600 text-sm hover:underline">
           <ArrowLeft size={14} /> Quay lại danh sách tài liệu
         </Link>
+      </div>
+    )
+  }
+
+  /* ====== AUTH GATE — require login ====== */
+  if (!user) {
+    const isPaid = doc.price && doc.price > 0
+    return (
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+        <ScrollReveal>
+          <div className="max-w-md mx-auto bg-white rounded-3xl shadow-section p-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-brand-100 flex items-center justify-center mx-auto mb-6">
+              <ShieldCheck size={36} className="text-brand-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-brand-900 mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
+              Đăng nhập để {isPaid ? 'mua' : 'tải'} tài liệu
+            </h1>
+            <p className="text-gray-500 mb-6 text-sm">
+              Vui lòng đăng nhập hoặc tạo tài khoản để tiếp tục.
+            </p>
+
+            {/* Doc preview */}
+            <div className="bg-gray-50 rounded-2xl p-4 mb-6 text-left flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                <FileText size={18} className="text-red-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800 line-clamp-1">{doc.title}</p>
+                <p className="text-sm font-bold text-brand-700 mt-0.5">
+                  {isPaid ? `${formatPrice(doc.price)}đ` : 'Miễn phí'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Link to={`/login?redirect=/tai-lieu/${id}/mua`}
+                    className="w-full h-12 rounded-xl font-semibold bg-brand-600 text-white shadow-md transition-all flex items-center justify-center gap-2 hover:bg-brand-700">
+                <LogIn size={18} /> Đăng nhập
+              </Link>
+              <Link to={`/register?redirect=/tai-lieu/${id}/mua`}
+                    className="w-full h-12 rounded-xl font-semibold border-2 border-brand-500 text-brand-700 transition-all flex items-center justify-center gap-2 hover:bg-brand-50">
+                <UserPlus size={18} /> Tạo tài khoản mới
+              </Link>
+            </div>
+
+            <button onClick={() => navigate(-1)} className="mt-4 text-xs text-gray-400 hover:text-gray-600">
+              ← Quay lại
+            </button>
+          </div>
+        </ScrollReveal>
       </div>
     )
   }
@@ -153,10 +233,6 @@ export default function DocumentBuyPage() {
               <ArrowLeft size={16} />
               Về trang Tài liệu
             </Link>
-            <Link to="/tai-lieu"
-                  className="text-xs text-gray-400 hover:text-gray-600 inline-flex items-center gap-1">
-              <ArrowLeft size={12} /> Xem thêm tài liệu khác
-            </Link>
           </div>
         </ScrollReveal>
       </div>
@@ -192,7 +268,7 @@ export default function DocumentBuyPage() {
                 <FileText size={18} className="text-red-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-brand-900 line-clamp-1">{order.docTitle}</p>
+                <p className="text-sm font-semibold text-brand-900 line-clamp-1">{doc.title}</p>
                 <p className="text-xs text-gray-500">Tài liệu số</p>
               </div>
               <span className="text-base font-bold text-red-600 shrink-0">
@@ -237,8 +313,53 @@ export default function DocumentBuyPage() {
     )
   }
 
-  /* ====== FORM — fill name & phone ====== */
+  /* ====== FORM — fill name & phone (authenticated) ====== */
   const isPaid = doc.price && doc.price > 0
+
+  // Free document — for logged-in user, just open directly
+  if (!isPaid) {
+    return (
+      <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
+        <ScrollReveal>
+          <div className="max-w-lg mx-auto">
+            <Link to="/tai-lieu"
+                  className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-5">
+              <ArrowLeft size={14} /> Quay lại tài liệu
+            </Link>
+            <div className="bg-white rounded-3xl shadow-section p-7 lg:p-10">
+              <div className="flex items-center gap-4 mb-7 pb-5 border-b border-gray-100">
+                <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
+                  <FileText size={26} className="text-red-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-base lg:text-lg font-bold text-brand-900 line-clamp-2"
+                      style={{ fontFamily: 'var(--font-heading)' }}>
+                    {doc.title}
+                  </h1>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs">Miễn phí</span>
+                </div>
+              </div>
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500 mb-6">Tài liệu này miễn phí, nhấn nút bên dưới để tải ngay.</p>
+                <a
+                  href={doc.file_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  download
+                  className="w-full h-12 rounded-xl font-bold bg-emerald-600 text-white
+                             shadow-md hover:bg-emerald-700
+                             flex items-center justify-center gap-2 transition-all"
+                >
+                  <Download size={18} />
+                  Tải xuống miễn phí
+                </a>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+      </div>
+    )
+  }
 
   return (
     <div className="mt-6 mb-8 mx-4 md:mx-16 xl:mx-[10%]">
@@ -266,107 +387,76 @@ export default function DocumentBuyPage() {
                     <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-500 font-semibold">{doc.file_type}</span>
                   )}
                   {doc.pages > 0 && <span>{doc.pages} trang</span>}
-                  {isPaid ? (
-                    <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 font-bold">
-                      {formatPrice(doc.price)}đ
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">Miễn phí</span>
-                  )}
+                  <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700 font-bold">
+                    {formatPrice(doc.price)}đ
+                  </span>
                 </div>
               </div>
             </div>
 
-            {isPaid ? (
-              <>
-                <h2 className="text-sm font-bold text-brand-900 mb-4">
-                  Điền thông tin để đặt mua
-                </h2>
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl mb-4">
-                    {error}
-                  </div>
-                )}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                      <User size={13} /> Họ tên *
-                    </label>
-                    <input
-                      type="text"
-                      value={form.name}
-                      onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                      required placeholder="Nguyễn Văn A"
-                      className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
-                                 focus:border-brand-500 focus:ring-4 focus:ring-brand-100
-                                 text-sm outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                      <Phone size={13} /> Số điện thoại *
-                    </label>
-                    <input
-                      type="tel"
-                      value={form.phone}
-                      onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-                      required placeholder="0xxx xxx xxx"
-                      className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
-                                 focus:border-brand-500 focus:ring-4 focus:ring-brand-100
-                                 text-sm outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-                      <Mail size={13} /> Email (tuỳ chọn)
-                    </label>
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                      placeholder="your@email.com"
-                      className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
-                                 focus:border-brand-500 focus:ring-4 focus:ring-brand-100
-                                 text-sm outline-none transition-all"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full h-12 rounded-xl font-bold bg-brand-600 text-white
-                               shadow-md hover:bg-brand-700 disabled:opacity-50
-                               flex items-center justify-center gap-2 transition-all"
-                  >
-                    {submitting
-                      ? <><Loader2 size={18} className="animate-spin" /> Đang xử lý...</>
-                      : <><CreditCard size={18} /> Đặt mua — {formatPrice(doc.price)}đ</>
-                    }
-                  </button>
-
-                  <p className="text-xs text-gray-400 text-center">
-                    Không cần tài khoản · Sau khi xác nhận thanh toán bạn nhận được link tải xuống
-                  </p>
-                </form>
-              </>
-            ) : (
-              /* Free document — show download button directly */
-              <div className="text-center py-4">
-                <p className="text-sm text-gray-500 mb-6">Tài liệu này miễn phí, nhấn nút bên dưới để tải ngay.</p>
-                <a
-                  href={doc.file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  download
-                  className="w-full h-12 rounded-xl font-bold bg-emerald-600 text-white
-                             shadow-md hover:bg-emerald-700
-                             flex items-center justify-center gap-2 transition-all"
-                >
-                  <Download size={18} />
-                  Tải xuống miễn phí
-                </a>
+            <h2 className="text-sm font-bold text-brand-900 mb-4">
+              Xác nhận thông tin đặt mua
+            </h2>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl mb-4">
+                {error}
               </div>
             )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên *</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  required placeholder="Nguyễn Văn A"
+                  className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
+                             focus:border-brand-500 focus:ring-4 focus:ring-brand-100
+                             text-sm outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại *</label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                  required placeholder="0xxx xxx xxx"
+                  className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
+                             focus:border-brand-500 focus:ring-4 focus:ring-brand-100
+                             text-sm outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email (tuỳ chọn)</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="your@email.com"
+                  className="w-full h-11 px-4 rounded-xl border-2 border-gray-200
+                             focus:border-brand-500 focus:ring-4 focus:ring-brand-100
+                             text-sm outline-none transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full h-12 rounded-xl font-bold bg-brand-600 text-white
+                           shadow-md hover:bg-brand-700 disabled:opacity-50
+                           flex items-center justify-center gap-2 transition-all"
+              >
+                {submitting
+                  ? <><Loader2 size={18} className="animate-spin" /> Đang xử lý...</>
+                  : <><CreditCard size={18} /> Đặt mua — {formatPrice(doc.price)}đ</>
+                }
+              </button>
+
+              <p className="text-xs text-gray-400 text-center">
+                Đăng nhập bằng: {user.email} · Lịch sử mua hàng sẽ được lưu lại
+              </p>
+            </form>
           </div>
         </div>
       </ScrollReveal>
