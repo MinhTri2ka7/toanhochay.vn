@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   ShoppingBag, Loader2, Lock, Package, CheckCircle, Clock, XCircle,
   BookOpen, FileText, GraduationCap, ExternalLink, ChevronDown, ChevronUp,
-  ArrowLeft,
+  ArrowLeft, Download, Play,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { usePurchases } from '../contexts/PurchaseContext'
@@ -257,40 +257,54 @@ export default function PurchaseHistoryPage() {
                             ? ownedCourseIds.has(item.product_id)
                             : false
 
+                          // Label + icon cho nút action
+                          const actionBtn = isOwned && order.status === 'paid' ? (() => {
+                            if (item.product_type === 'book') return { label: 'Xem sách', icon: BookOpen, cls: 'bg-amber-500 hover:bg-amber-600' }
+                            if (item.product_type === 'document') return { label: 'Tải tài liệu', icon: Download, cls: 'bg-red-500 hover:bg-red-600' }
+                            if (item.product_type === 'course' || item.product_type === 'combo') return { label: 'Vào học', icon: Play, cls: 'bg-blue-500 hover:bg-blue-600' }
+                            return null
+                          })() : null
+
                           return (
                             <div
                               key={idx}
-                              className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200
-                                ${isOwned && order.status === 'paid'
-                                  ? 'bg-emerald-50/50 hover:bg-emerald-50 cursor-pointer'
-                                  : 'bg-gray-50'
-                                }`}
-                              onClick={() => {
-                                if (isOwned && order.status === 'paid') handleItemClick(item)
-                              }}
+                              className="flex flex-col gap-2 p-3 rounded-xl bg-gray-50"
                             >
-                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${typeInfo.color}`}>
-                                <TypeIcon size={16} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-800 line-clamp-1">
-                                  {item.product_name}
-                                </p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[10px] font-medium text-gray-400">{typeInfo.label}</span>
-                                  {item.quantity > 1 && (
-                                    <span className="text-[10px] text-gray-400">× {item.quantity}</span>
-                                  )}
+                              {/* Row 1: icon + tên + giá */}
+                              <div className="flex items-center gap-3">
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${typeInfo.color}`}>
+                                  <TypeIcon size={16} />
                                 </div>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-sm font-bold text-brand-700">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-gray-800 line-clamp-1">
+                                    {item.product_name}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[10px] font-medium text-gray-400">{typeInfo.label}</span>
+                                    {item.quantity > 1 && (
+                                      <span className="text-[10px] text-gray-400">× {item.quantity}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-sm font-bold text-brand-700 shrink-0">
                                   {formatPrice(item.price * (item.quantity || 1))}đ
                                 </span>
-                                {isOwned && order.status === 'paid' && (
-                                  <ExternalLink size={14} className="text-emerald-500" />
-                                )}
                               </div>
+
+                              {/* Row 2: nút action nếu đã sở hữu */}
+                              {actionBtn && (() => {
+                                const BtnIcon = actionBtn.icon
+                                return (
+                                  <button
+                                    onClick={() => handleItemClick(item)}
+                                    className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg
+                                      text-white text-xs font-semibold transition-colors ${actionBtn.cls}`}
+                                  >
+                                    <BtnIcon size={13} />
+                                    {actionBtn.label}
+                                  </button>
+                                )
+                              })()}
                             </div>
                           )
                         })}
