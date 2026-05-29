@@ -189,7 +189,7 @@ app.post('/api/webhook/sepay', async (req, res) => {
         status: 'completed', raw_data: req.body,
       })
 
-      // Auto-activate courses/combos
+      // Auto-activate courses/combos/books/documents
       const items = await db.selectAll('order_items', { where: { order_id: order.id } })
       for (const item of items) {
         if (item.product_type === 'course') {
@@ -202,6 +202,14 @@ app.post('/api/webhook/sepay', async (req, res) => {
             for (const ci of comboItems) {
               await db.upsert('user_courses', { user_id: order.user_id, course_id: ci.course_id }, { onConflict: 'user_id, course_id' })
             }
+          } catch (e) { /* ignore */ }
+        } else if (item.product_type === 'book' && order.user_id) {
+          try {
+            await db.upsert('user_books', { user_id: order.user_id, book_id: item.product_id, activated_at: new Date().toISOString() }, { onConflict: 'user_id, book_id' })
+          } catch (e) { /* ignore */ }
+        } else if (item.product_type === 'document' && order.user_id) {
+          try {
+            await db.upsert('user_documents', { user_id: order.user_id, document_id: parseInt(item.product_id) }, { onConflict: 'user_id, document_id' })
           } catch (e) { /* ignore */ }
         }
       }

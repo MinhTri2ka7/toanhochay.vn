@@ -54,15 +54,24 @@ export default function PurchaseHistoryPage() {
 
     if (type === 'book') {
       if (ownedBookIds.has(id)) {
-        // Navigate to my-books to access the pdf
-        navigate('/sach-cua-toi')
+        // Fetch book PDF link (authenticated) and open directly
+        fetch(`/api/books/${id}/link`, { credentials: 'include' })
+          .then(r => r.json())
+          .then(data => {
+            if (data.pdf_url) {
+              window.open(data.pdf_url, '_blank', 'noopener,noreferrer')
+            } else {
+              navigate('/sach-cua-toi')
+            }
+          })
+          .catch(() => navigate('/sach-cua-toi'))
       } else {
         navigate(`/sach/${id}/mua`)
       }
     } else if (type === 'document') {
       if (ownedDocumentIds.has(String(id))) {
-        // Fetch the document file_url and open it
-        fetch(`/api/documents/${id}`)
+        // Fetch the document file_url and open it (with credentials)
+        fetch(`/api/documents/${id}`, { credentials: 'include' })
           .then(r => r.json())
           .then(doc => {
             if (doc.file_url) {

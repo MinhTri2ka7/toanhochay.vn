@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { usePurchases } from '../contexts/PurchaseContext'
-import { ImageOff, ShoppingBag, CheckCircle } from 'lucide-react'
+import { ImageOff, ShoppingBag, CheckCircle, ExternalLink } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 function formatPrice(price) {
@@ -10,6 +10,7 @@ function formatPrice(price) {
 
 export default function CourseCard({ item, type = 'course' }) {
   const [imgError, setImgError] = useState(false)
+  const [openingLink, setOpeningLink] = useState(false)
   const { ownedCourseIds, ownedBookIds } = usePurchases()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -21,7 +22,7 @@ export default function CourseCard({ item, type = 'course' }) {
 
   // Link to course detail page using slug
   const href = type === 'book'
-    ? (isOwned ? '/sach-cua-toi' : '/sach')
+    ? (isOwned ? null : `/sach/${item.id}/mua`)
     : (isOwned ? `/hoc/${item.slug || item.id}` : `/khoa-hoc/${item.slug || item.id}`)
 
   const hasDiscount = item.old_price || item.oldPrice
@@ -65,9 +66,30 @@ export default function CourseCard({ item, type = 'course' }) {
     }
   }
 
+  // Handle click on owned book card — open PDF directly in new tab
+  function handleCardClick() {
+    if (type === 'book' && isOwned) {
+      if (openingLink) return
+      setOpeningLink(true)
+      fetch(`/api/books/${item.id}/link`, { credentials: 'include' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.pdf_url) {
+            window.open(data.pdf_url, '_blank', 'noopener,noreferrer')
+          } else {
+            navigate('/sach-cua-toi')
+          }
+        })
+        .catch(() => navigate('/sach-cua-toi'))
+        .finally(() => setOpeningLink(false))
+      return
+    }
+    if (href) navigate(href)
+  }
+
   return (
-    <Link to={href}
-          className="group flex flex-col bg-white rounded-2xl
+    <div onClick={handleCardClick}
+          className="group flex flex-col bg-white rounded-2xl cursor-pointer
                      shadow-card hover:shadow-card-hover
                      transition-all duration-400 overflow-hidden h-full
                      hover:-translate-y-1">
@@ -112,6 +134,13 @@ export default function CourseCard({ item, type = 'course' }) {
             <CheckCircle size={10} /> Đã mua
           </div>
         )}
+
+        {/* Opening overlay for owned books */}
+        {type === 'book' && isOwned && openingLink && (
+          <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+            <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -123,9 +152,12 @@ export default function CourseCard({ item, type = 'course' }) {
         {/* Price row + Buy button */}
         <div className="flex items-center justify-between gap-2 mt-auto">
           {isOwned ? (
-            /* Owned — show "Đã mua" label */
+            /* Owned — show "Đọc ngay" or "Đã mua" label */
             <span className="inline-flex items-center gap-1 font-bold text-sm text-emerald-600">
-              <CheckCircle size={14} /> Đã mua
+              {type === 'book'
+                ? <><ExternalLink size={13} /> Đọc ngay</>
+                : <><CheckCircle size={14} /> Đã mua</>
+              }
             </span>
           ) : (
             /* Not owned — show price */
@@ -154,6 +186,6 @@ export default function CourseCard({ item, type = 'course' }) {
           )}
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
