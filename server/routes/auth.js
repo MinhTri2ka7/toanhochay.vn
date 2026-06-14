@@ -55,6 +55,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     setTokenCookie(res, token)
 
     await logSecurity(newUser.id, 'register', req.ip)
+    await linkGuestOrders(newUser.id, newUser.email, newUser.phone)
 
     res.status(201).json({
       message: 'Đăng ký thành công',
@@ -119,6 +120,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     setTokenCookie(res, token)
 
     await logSecurity(user.id, 'login_success', req.ip)
+    await linkGuestOrders(user.id, user.email, user.phone)
 
     res.json({
       message: 'Đăng nhập thành công',
@@ -145,5 +147,86 @@ router.post('/logout', (req, res) => {
 router.get('/me', authenticateToken, (req, res) => {
   res.json({ user: req.user })
 })
+
+// Helper to link guest orders to user accounts upon registration/login
+async function linkGuestOrders(userId, email, phone) {
+  try {
+    if (!userId) return
+
+    const emailSanitized = email?.toLowerCase().trim()
+    const phoneSanitized = phone?.replace(/\s/g, '')
+
+    if (!emailSanitized && !phoneSanitized) return
+
+    const conditions = []
+    if (emailSanitized) conditions.push(`email.eq.${emailSanitized}`)
+    if (phoneSanitized) conditions.push(`phone.eq.${phoneSanitized}`)
+
+    const { data: orders, error: ordersErr } = await db.supabase
+      .from('orders')
+      .select('id, user_id')
+      .eq('status', 'paid')
+      .is('user_id', null)
+      .or(conditions.join(','))
+
+    if (ordersErr) {
+      console.error('Error fetching guest orders to link:', ordersErr)
+      return
+    }
+
+    if (!orders || orders.length === 0) return
+
+    const orderIds = orders.map(o => o.id)
+
+    // Update orders to set user_id
+    const { error: updateErr } = await db.supabase
+      .from('orders')
+      .update({ user_id: userId })
+      .in('id', orderIds)
+
+    if (updateErr) {
+      console.error('Error linking guest orders to user:', updateErr)
+      return
+    }
+
+    console.log(`Linked guest orders ${orderIds.join(', ')} to user ${userId}`)
+
+    // Fetch order items to activate
+    const { data: orderItems, error: itemsErr } = await db.supabase
+      .from('order_items')
+      .select('*')
+      .in('order_id', orderIds)
+
+    if (itemsErr) {
+      console.error('Error fetching order items for linking:', itemsErr)
+      return
+    }
+
+    for (const item of orderItems || []) {
+      if (item.product_type === 'course') {
+        try {
+          await db.upsert('user_courses', { user_id: userId, course_id: item.product_id }, { onConflict: 'user_id, course_id' })
+        } catch (e) { /* ignore */ }
+      } else if (item.product_type === 'combo') {
+        try {
+          const comboItems = await db.selectAll('combo_items', { where: { combo_id: item.product_id } })
+          for (const ci of comboItems) {
+            await db.upsert('user_courses', { user_id: userId, course_id: ci.course_id }, { onConflict: 'user_id, course_id' })
+          }
+        } catch (e) { /* ignore */ }
+      } else if (item.product_type === 'book') {
+        try {
+          await db.upsert('user_books', { user_id: userId, book_id: item.product_id, activated_at: new Date().toISOString() }, { onConflict: 'user_id, book_id' })
+        } catch (e) { /* ignore */ }
+      } else if (item.product_type === 'document') {
+        try {
+          await db.upsert('user_documents', { user_id: userId, document_id: parseInt(item.product_id) }, { onConflict: 'user_id, document_id' })
+        } catch (e) { /* ignore */ }
+      }
+    }
+  } catch (err) {
+    console.error('linkGuestOrders error:', err)
+  }
+}
 
 export default router

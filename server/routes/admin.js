@@ -90,20 +90,34 @@ router.get('/orders-by-day', async (req, res) => {
     if (!day) return res.status(400).json({ error: 'Missing day parameter' })
 
     const { data: orders, error } = await db.supabase
-      .from('orders').select('id, total_amount, status, name, email, phone, payment_code, created_at, user_id')
+      .from('orders')
+      .select(`
+        id, total_amount, status, name, email, phone, payment_code, created_at, user_id,
+        users (
+          name
+        ),
+        order_items (
+          product_name,
+          price,
+          quantity
+        )
+      `)
       .eq('status', 'paid')
       .gte('created_at', day + 'T00:00:00')
       .lt('created_at', day + 'T23:59:59')
       .order('created_at', { ascending: false })
     if (error) throw error
 
-    const result = await Promise.all((orders || []).map(async (o) => {
-      const user = await db.selectOne('users', { id: o.user_id }, 'name')
-      const items = await db.selectAll('order_items', { where: { order_id: o.id }, columns: 'product_name, price, quantity' })
-      return { ...o, user_name: user?.name, items }
+    const result = (orders || []).map(o => ({
+      ...o,
+      user_name: o.users?.name,
+      items: o.order_items,
+      users: undefined,
+      order_items: undefined
     }))
     res.json(result)
   } catch (err) {
+    console.error('Fetch orders-by-day error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })
@@ -366,17 +380,31 @@ router.delete('/feedbacks/:id', async (req, res) => {
 router.get('/orders', async (req, res) => {
   try {
     const { data: orders, error } = await db.supabase
-      .from('orders').select('*')
+      .from('orders')
+      .select(`
+        *,
+        users (
+          name,
+          email
+        ),
+        order_items (
+          *
+        )
+      `)
       .order('created_at', { ascending: false })
     if (error) throw error
 
-    const result = await Promise.all((orders || []).map(async (o) => {
-      const user = await db.selectOne('users', { id: o.user_id }, 'name, email')
-      const items = await db.selectAll('order_items', { where: { order_id: o.id } })
-      return { ...o, user_name: user?.name, user_email: user?.email, items }
+    const result = (orders || []).map(o => ({
+      ...o,
+      user_name: o.users?.name,
+      user_email: o.users?.email,
+      items: o.order_items,
+      users: undefined,
+      order_items: undefined
     }))
     res.json(result)
   } catch (err) {
+    console.error('Fetch orders error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })
@@ -397,17 +425,23 @@ router.put('/orders/:id/status', async (req, res) => {
         if (item.product_type === 'course' || item.product_type === 'combo') {
           try {
             await db.upsert('user_courses', { user_id: order.user_id, course_id: item.product_id }, { onConflict: 'user_id, course_id' })
-          } catch (e) { /* ignore duplicates */ }
+          } catch (e) {
+            console.error('Error activating course:', e.message)
+          }
         }
         if (item.product_type === 'book') {
           try {
-            await db.upsert('user_books', { user_id: order.user_id, book_id: item.product_id }, { onConflict: 'user_id, book_id' })
-          } catch (e) { /* ignore duplicates or missing table */ }
+            await db.upsert('user_books', { user_id: order.user_id, book_id: item.product_id, activated_at: new Date().toISOString() }, { onConflict: 'user_id, book_id' })
+          } catch (e) {
+            console.error('Error activating book:', e.message)
+          }
         }
         if (item.product_type === 'document') {
           try {
             await db.upsert('user_documents', { user_id: order.user_id, document_id: parseInt(item.product_id) }, { onConflict: 'user_id, document_id' })
-          } catch (e) { /* ignore duplicates or missing table */ }
+          } catch (e) {
+            console.error('Error activating document:', e.message)
+          }
         }
       }
 
@@ -418,6 +452,7 @@ router.put('/orders/:id/status', async (req, res) => {
 
     res.json({ message: 'Cập nhật trạng thái đơn hàng thành công' })
   } catch (err) {
+    console.error('Update order status error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })
@@ -428,20 +463,30 @@ router.put('/orders/:id/status', async (req, res) => {
 router.get('/transactions', async (req, res) => {
   try {
     const { data: payments, error } = await db.supabase
-      .from('payments').select('*')
+      .from('payments')
+      .select(`
+        *,
+        orders (
+          payment_code,
+          name,
+          email,
+          total_amount
+        )
+      `)
       .order('created_at', { ascending: false })
     if (error) throw error
 
-    const result = await Promise.all((payments || []).map(async (p) => {
-      const order = p.order_id ? await db.selectOne('orders', { id: p.order_id }, 'payment_code, name, email, total_amount') : null
-      return {
-        ...p,
-        payment_code: order?.payment_code, customer_name: order?.name,
-        customer_email: order?.email, order_total: order?.total_amount,
-      }
+    const result = (payments || []).map(p => ({
+      ...p,
+      payment_code: p.orders?.payment_code,
+      customer_name: p.orders?.name,
+      customer_email: p.orders?.email,
+      order_total: p.orders?.total_amount,
+      orders: undefined
     }))
     res.json(result)
   } catch (err) {
+    console.error('Fetch transactions error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })

@@ -169,19 +169,26 @@ router.post('/orders', authenticateToken, async (req, res) => {
 router.get('/orders', authenticateToken, async (req, res) => {
   try {
     const { data: orders, error } = await db.supabase
-      .from('orders').select('*')
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          *
+        )
+      `)
       .eq('user_id', req.user.id)
       .order('created_at', { ascending: false })
     if (error) throw error
 
-    // Attach items
-    const result = await Promise.all((orders || []).map(async (order) => {
-      const items = await db.selectAll('order_items', { where: { order_id: order.id } })
-      return { ...order, items }
+    const result = (orders || []).map(o => ({
+      ...o,
+      items: o.order_items,
+      order_items: undefined
     }))
 
     res.json(result)
   } catch (err) {
+    console.error('Fetch user orders error:', err)
     res.status(500).json({ error: 'Lỗi server' })
   }
 })
